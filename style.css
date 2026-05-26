@@ -1,0 +1,669 @@
+/* ==========================================================================
+   コマ合わせ (Koma-Awase) - メインスタイルシート
+   ========================================================================== */
+
+/* 1. 変数定義 (Design System Tokens) */
+:root {
+    /* カラーパレット (ライトモード) */
+    --primary-color: #3b82f6;      /* ソフトブルー */
+    --primary-light: #eff6ff;
+    --secondary-color: #10b981;    /* ミントグリーン */
+    --secondary-light: #ecfdf5;
+    --accent-color: #f59e0b;       /* コーラルオレンジ */
+    --danger-color: #ef4444;       /* レッド */
+    
+    --bg-app: #f8fafc;             /* アプリ背景 (淡いグレー) */
+    --bg-card: #ffffff;            /* カード背景 */
+    --border-color: #e2e8f0;       /* 境界線 */
+    
+    --text-main: #1e293b;          /* メインテキスト (濃いグレー) */
+    --text-muted: #64748b;         /* サブテキスト */
+    --text-white: #ffffff;
+    
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
+    --shadow-glow: 0 10px 25px -5px rgba(59, 130, 246, 0.2);
+
+    --radius-sm: 8px;
+    --radius-md: 16px;
+    --radius-lg: 24px;
+    --radius-full: 9999px;
+    
+    --font-sans: 'Noto Sans JP', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --font-outfit: 'Outfit', sans-serif;
+    
+    --transition-fast: 0.15s ease;
+    --transition-normal: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ダークモード用変数 */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --bg-app: #0f172a;         /* ディープスレートネイビー */
+        --bg-card: #1e293b;        /* カード背景 */
+        --border-color: #334155;
+        
+        --text-main: #f8fafc;
+        --text-muted: #94a3b8;
+        
+        --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.2);
+        --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.2), 0 2px 4px -1px rgba(0, 0, 0, 0.1);
+        --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.15);
+        --shadow-glow: 0 10px 25px -5px rgba(59, 130, 246, 0.4);
+        
+        --primary-light: #172554;
+        --secondary-light: #022c22;
+    }
+}
+
+/* 2. リセット & ベーススタイル */
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: var(--font-sans);
+    background-color: var(--bg-app);
+    color: var(--text-main);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    padding: 1rem;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+}
+
+/* スクリーンリーダー用非表示クラス */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* 3. アプリ全体のコンテナ */
+.app-container {
+    width: 100%;
+    max-width: 800px;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+/* 4. ヘッダー */
+.app-header {
+    text-align: center;
+    padding: 1.5rem 0 0.5rem 0;
+}
+
+.logo-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.logo-icon {
+    font-size: 2.2rem;
+    animation: bounce 2s infinite;
+}
+
+.logo-text {
+    font-family: var(--font-sans);
+    font-weight: 900;
+    font-size: 2.2rem;
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.logo-beta {
+    font-size: 0.8rem;
+    font-family: var(--font-outfit);
+    font-weight: 800;
+    background: var(--accent-color);
+    -webkit-text-fill-color: var(--text-white);
+    padding: 0.1rem 0.5rem;
+    border-radius: var(--radius-full);
+    text-shadow: none;
+    align-self: flex-start;
+    margin-top: 0.4rem;
+}
+
+.tagline {
+    font-size: 0.95rem;
+    color: var(--text-muted);
+    font-weight: 500;
+}
+
+/* 5. カードスタイル */
+.card {
+    background-color: var(--bg-card);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+    transition: var(--transition-normal);
+}
+
+.card:hover {
+    box-shadow: var(--shadow-md);
+}
+
+.card-header {
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.step-badge {
+    font-family: var(--font-outfit);
+    font-weight: 800;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    background: linear-gradient(135deg, var(--primary-color), #2563eb);
+    color: var(--text-white);
+    padding: 0.25rem 0.75rem;
+    border-radius: var(--radius-full);
+}
+
+.card-header h2 {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--text-main);
+}
+
+.card-body {
+    padding: 1.5rem;
+}
+
+.section-desc {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-bottom: 1rem;
+}
+
+/* 6. ステップ1: プロフィール入力 */
+.input-group {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.input-icon {
+    position: absolute;
+    left: 1rem;
+    color: var(--text-muted);
+    width: 20px;
+    height: 20px;
+}
+
+#input-name {
+    width: 100%;
+    padding: 0.85rem 1rem 0.85rem 2.8rem;
+    border: 2px solid var(--border-color);
+    border-radius: var(--radius-md);
+    background-color: var(--bg-app);
+    color: var(--text-main);
+    font-size: 1.1rem;
+    font-weight: 700;
+    outline: none;
+    transition: var(--transition-fast);
+}
+
+#input-name:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15);
+    background-color: var(--bg-card);
+}
+
+.input-tip {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-top: 0.5rem;
+}
+
+/* 7. 土日切り替えトグル */
+.toggle-container {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.toggle-label {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--text-muted);
+}
+
+.toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 44px;
+    height: 24px;
+    border: none;
+    outline: none;
+    background-color: var(--border-color);
+    border-radius: var(--radius-full);
+    cursor: pointer;
+    transition: var(--transition-fast);
+}
+
+.toggle-switch.active {
+    background-color: var(--primary-color);
+}
+
+.toggle-slider {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background-color: var(--text-white);
+    border-radius: 50%;
+    transition: var(--transition-fast);
+    box-shadow: var(--shadow-sm);
+}
+
+.toggle-switch.active .toggle-slider {
+    transform: translateX(20px);
+}
+
+/* 8. 時間割グリッド (Timetable Grid) */
+.timetable-wrapper {
+    overflow-x: auto; /* 横スクロール対応 */
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    background-color: var(--bg-app);
+    margin-bottom: 1.5rem;
+    /* スクロールバーの非表示・スタイリング */
+    scrollbar-width: thin;
+    -webkit-overflow-scrolling: touch;
+}
+
+.timetable-grid {
+    display: grid;
+    /* JSで列数は動的に定義（月〜金なら 6列、月〜日なら 8列） */
+    grid-template-columns: 80px repeat(var(--columns, 5), 1fr);
+    min-width: 500px; /* 横潰れ防止のための最小幅 */
+    background-color: var(--border-color);
+    gap: 1px; /* 枠線を隙間で表現 */
+}
+
+/* 各セル */
+.grid-cell {
+    background-color: var(--bg-card);
+    padding: 0.75rem 0.5rem;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    user-select: none;
+    min-height: 60px;
+}
+
+/* ヘッダーセル（曜日ラベル） */
+.cell-header {
+    background-color: var(--bg-app);
+    font-weight: 700;
+    font-size: 0.85rem;
+    color: var(--text-main);
+    padding: 0.5rem;
+    min-height: 40px;
+}
+
+/* 1列目セル（時限ラベル） */
+.cell-label {
+    background-color: var(--bg-app);
+    font-weight: 700;
+    color: var(--text-main);
+    border-right: 1px solid var(--border-color);
+    padding: 0.5rem;
+}
+
+.period-num {
+    font-family: var(--font-outfit);
+    font-size: 1.1rem;
+    font-weight: 900;
+}
+
+.period-time {
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    font-weight: 500;
+}
+
+/* 選択可能な時間セル */
+.cell-slot {
+    cursor: pointer;
+    transition: var(--transition-fast);
+}
+
+.cell-slot:hover {
+    background-color: var(--primary-light);
+}
+
+/* アクティブ状態 (選択中) */
+.cell-slot.selected {
+    background-color: var(--secondary-color);
+    color: var(--text-white);
+    animation: pulse 0.15s ease-out;
+}
+
+.cell-slot.selected:hover {
+    background-color: #059669; /* 濃いミントグリーン */
+}
+
+/* ドラッグ中の選択防止 */
+.timetable-grid.dragging {
+    cursor: grabbing;
+}
+
+/* 9. 結果表示グリッド & ヒートマップ */
+.results-grid {
+    pointer-events: auto; /* クリックでツールチップ表示 */
+}
+
+/* ヒートマップ背景色のグラデーション定義 (参加人数に応じてJSで強度を動的に設定) */
+.cell-result {
+    font-size: 0.75rem;
+    font-weight: 700;
+    position: relative;
+    cursor: help;
+}
+
+/* ホバー時のツールチップ用スタイル */
+.cell-result::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 105%;
+    left: 50%;
+    transform: translateX(-50%) translateY(5px);
+    background-color: rgba(15, 23, 42, 0.95);
+    color: #fff;
+    padding: 0.4rem 0.8rem;
+    border-radius: var(--radius-sm);
+    font-size: 0.7rem;
+    white-space: nowrap;
+    z-index: 10;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity var(--transition-fast), transform var(--transition-fast);
+    box-shadow: var(--shadow-lg);
+    pointer-events: none;
+}
+
+.cell-result:hover::after {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(-50%) translateY(0);
+}
+
+/* 10. ボタン定義 */
+.action-buttons {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+}
+
+@media (min-width: 600px) {
+    .action-buttons {
+        grid-template-columns: 1fr 1fr;
+    }
+    
+    #btn-clear-selection {
+        grid-column: span 2;
+    }
+}
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.85rem 1.5rem;
+    font-size: 0.95rem;
+    font-weight: 700;
+    border-radius: var(--radius-md);
+    border: none;
+    cursor: pointer;
+    transition: var(--transition-normal);
+    user-select: none;
+    text-decoration: none;
+}
+
+.btn svg {
+    width: 20px;
+    height: 20px;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, var(--primary-color), #2563eb);
+    color: var(--text-white);
+    box-shadow: var(--shadow-sm);
+}
+
+.btn-primary:hover {
+    box-shadow: var(--shadow-glow);
+    transform: translateY(-1px);
+}
+
+.btn-success {
+    background: linear-gradient(135deg, var(--secondary-color), #059669);
+    color: var(--text-white);
+}
+
+.btn-success:hover {
+    box-shadow: 0 10px 25px -5px rgba(16, 185, 129, 0.2);
+    transform: translateY(-1px);
+}
+
+.btn-outline {
+    background-color: transparent;
+    border: 2px solid var(--border-color);
+    color: var(--text-muted);
+}
+
+.btn-outline:hover {
+    background-color: var(--bg-app);
+    color: var(--text-main);
+    border-color: var(--text-muted);
+}
+
+/* 11. メンバーリスト */
+.members-container {
+    margin-bottom: 1.5rem;
+}
+
+.members-container h3, .results-grid-container h3, .recommendations-box h3 {
+    font-size: 1rem;
+    font-weight: 700;
+    margin-bottom: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.member-tags-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    min-height: 40px;
+    align-items: center;
+}
+
+.no-members-msg {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    font-style: italic;
+}
+
+/* メンバーステッカー（タグ） */
+.member-tag {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    background-color: var(--primary-light);
+    color: var(--primary-color);
+    padding: 0.35rem 0.75rem;
+    border-radius: var(--radius-full);
+    font-size: 0.8rem;
+    font-weight: 700;
+    border: 1px solid rgba(59, 130, 246, 0.2);
+    animation: scaleUp var(--transition-fast);
+}
+
+.member-tag-delete {
+    background: none;
+    border: none;
+    color: var(--primary-color);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.6;
+    transition: var(--transition-fast);
+}
+
+.member-tag-delete:hover {
+    opacity: 1;
+    color: var(--danger-color);
+}
+
+.member-tag-delete svg {
+    width: 14px;
+    height: 14px;
+}
+
+.divider {
+    border: none;
+    border-top: 1px solid var(--border-color);
+    margin: 1.5rem 0;
+}
+
+/* 12. おすすめリスト */
+.recommendations-box {
+    background-color: var(--secondary-light);
+    border: 1px dashed var(--secondary-color);
+    border-radius: var(--radius-md);
+    padding: 1.25rem;
+    margin-top: 1.5rem;
+}
+
+.recommendations-box h3 {
+    color: var(--secondary-color);
+}
+
+.recommendation-list {
+    list-style-type: none;
+    padding-left: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.recommendation-list li {
+    font-size: 0.85rem;
+    font-weight: 500;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+}
+
+.recommendation-list li::before {
+    content: "✨";
+}
+
+/* 13. トースト通知 */
+.toast {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-100px);
+    background-color: rgba(15, 23, 42, 0.95);
+    backdrop-filter: blur(8px);
+    color: var(--text-white);
+    padding: 0.85rem 1.5rem;
+    border-radius: var(--radius-full);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 700;
+    font-size: 0.85rem;
+    box-shadow: var(--shadow-lg);
+    z-index: 1000;
+    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    pointer-events: none;
+}
+
+.toast.show {
+    transform: translateX(-50%) translateY(0);
+}
+
+.toast.hidden {
+    display: none;
+}
+
+.toast-icon {
+    width: 18px;
+    height: 18px;
+    color: var(--secondary-color);
+}
+
+/* 14. フッター */
+.app-footer {
+    text-align: center;
+    padding: 2rem 0;
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.footer-sub {
+    opacity: 0.8;
+}
+
+/* 15. アニメーションキーフレーム */
+@keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-6px); }
+}
+
+@keyframes pulse {
+    0% { transform: scale(0.95); }
+    50% { transform: scale(1.03); }
+    100% { transform: scale(1); }
+}
+
+@keyframes scaleUp {
+    from { transform: scale(0.85); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+
+/* レスポンシブ用補助クラス */
+@media (max-width: 600px) {
+    .desktop-only {
+        display: none !important;
+    }
+}

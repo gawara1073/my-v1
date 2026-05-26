@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>コマ合わせ 📅 | 大学生向け空き時間チェッカー</title>
+    
+    <!-- SEOメタデータ -->
+    <meta name="description" content="大学の友達と空いている授業コマ（時限）をタップして共有するだけで、全員の空き時間が一目でわかる！LINEの予定調整を圧倒的に簡単にする無料のスケジュール調整ツール。">
+    <meta name="keywords" content="コマ合わせ, 空き時間チェッカー, 大学生, 時間割, 予定調整, スケジュール調整, LINE, サーバー不要, 無料">
+    <meta name="author" content="コマ合わせ開発チーム">
+    
+    <!-- OGP (Open Graph Protocol) -->
+    <meta property="og:title" content="コマ合わせ 📅 | 大学生向け空き時間チェッカー">
+    <meta property="og:description" content="大学の友達と空いているコマを共有して、全員の空き時間をヒートマップで確認！LINEでの予定調整を圧倒的にスムーズにします。">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="コマ合わせ">
+    
+    <!-- Google Fonts: Outfit (英語数字用モダンフォント) & Noto Sans JP (日本語用) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&family=Outfit:wght@400;600;800;900&display=swap" rel="stylesheet">
+    
+    <!-- Lucide Icons (モダンなSVGアイコンライブラリ) -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- メインCSS -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- ヘッダー -->
+        <header class="app-header">
+            <div class="logo-container">
+                <span class="logo-icon">📅</span>
+                <h1 class="logo-text">コマ合わせ <span class="logo-beta">v1.0</span></h1>
+            </div>
+            <p class="tagline">LINEの面倒な予定調整を、タップだけで一瞬で解決！</p>
+        </header>
+
+        <!-- メインコンテンツ -->
+        <main class="app-main">
+            <!-- 共有データ受信時のトースト通知 (デフォルト非表示) -->
+            <div id="toast" class="toast hidden">
+                <i data-lucide="info" class="toast-icon"></i>
+                <span id="toast-message">〇〇さんの空き時間を読み込みました！</span>
+            </div>
+
+            <!-- ステップ1: プロフィール入力 -->
+            <section class="card setup-section" id="sec-profile">
+                <div class="card-header">
+                    <span class="step-badge">Step 1</span>
+                    <h2>あなたの名前を教えて！</h2>
+                </div>
+                <div class="card-body">
+                    <div class="input-group">
+                        <label for="input-name" class="sr-only">名前</label>
+                        <i data-lucide="user" class="input-icon"></i>
+                        <input type="text" id="input-name" placeholder="例: たろう" maxlength="15" autocomplete="off" required>
+                    </div>
+                    <p class="input-tip">※ニックネームでもOK！友達にわかる名前にしよう。</p>
+                </div>
+            </section>
+
+            <!-- ステップ2: 空き時間選択 -->
+            <section class="card grid-section" id="sec-select-grid">
+                <div class="card-header">
+                    <span class="step-badge">Step 2</span>
+                    <h2>空いているコマをタップ！</h2>
+                </div>
+                <div class="card-body">
+                    <p class="section-desc">授業が入っていない、または予定が空いていて遊べるコマを塗りつぶしてね！<br><span class="desktop-only">（ドラッグで連続選択できます）</span></p>
+                    
+                    <!-- 土日表示トグルボタン -->
+                    <div class="toggle-container">
+                        <span class="toggle-label">土日も表示する</span>
+                        <button type="button" id="btn-toggle-weekend" class="toggle-switch" aria-label="土日表示切り替え">
+                            <span class="toggle-slider"></span>
+                        </button>
+                    </div>
+
+                    <!-- 時間割グリッドコンテナ -->
+                    <div class="timetable-wrapper">
+                        <div id="selection-grid" class="timetable-grid">
+                            <!-- JSで動的に時間割グリッドを生成します -->
+                        </div>
+                    </div>
+
+                    <!-- 操作ボタンエリア -->
+                    <div class="action-buttons">
+                        <button type="button" id="btn-add-member" class="btn btn-primary">
+                            <i data-lucide="user-plus"></i>
+                            <span>メンバーに追加する</span>
+                        </button>
+                        <button type="button" id="btn-share-url" class="btn btn-success">
+                            <i data-lucide="send"></i>
+                            <span>LINEに共有URLをコピー</span>
+                        </button>
+                        <button type="button" id="btn-clear-selection" class="btn btn-outline">
+                            <i data-lucide="trash-2"></i>
+                            <span>選択をクリア</span>
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ステップ3: 共通空き時間（結果表示） -->
+            <section class="card results-section" id="sec-results">
+                <div class="card-header">
+                    <span class="step-badge">Step 3</span>
+                    <h2>みんなの共通の空き時間 🎯</h2>
+                </div>
+                <div class="card-body">
+                    <!-- 登録メンバー一覧 -->
+                    <div class="members-container">
+                        <h3>参加メンバー (<span id="member-count">0</span>人)</h3>
+                        <div id="member-tags" class="member-tags-list">
+                            <!-- JSで動的に登録メンバーをタグとして生成します -->
+                            <p class="no-members-msg">メンバーがまだ登録されていません。上のボタンから追加してね！</p>
+                        </div>
+                    </div>
+
+                    <hr class="divider">
+
+                    <!-- 共通の空き時間ヒートマップ -->
+                    <div class="results-grid-container">
+                        <h3>空き時間ヒートマップ</h3>
+                        <p class="section-desc">色が濃いコマほど、多くのメンバーが空いている時間です！タップすると空いている人の名前が表示されます。</p>
+                        <div class="timetable-wrapper">
+                            <div id="result-grid" class="timetable-grid results-grid">
+                                <!-- JSで動的に結果グリッドを生成します -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- おすすめ時間帯のテキスト表示 -->
+                    <div class="recommendations-box">
+                        <h3>💡 おすすめの時間帯</h3>
+                        <ul id="recommendation-list" class="recommendation-list">
+                            <li>メンバーが登録されると、全員が空いている時間帯を自動で計算してここに提案します！</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- フッター -->
+        <footer class="app-footer">
+            <p>&copy; 2026 コマ合わせ | 大学生のための予定調整プロトタイプ</p>
+            <p class="footer-sub">サーバー不要・個人情報送信なしの安心設計。GitHub Pagesで公開可能。</p>
+        </footer>
+    </div>
+
+    <!-- メインJavaScript -->
+    <script src="app.js"></script>
+</body>
+</html>

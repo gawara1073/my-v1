@@ -35,6 +35,18 @@
     
     --transition-fast: 0.15s ease;
     --transition-normal: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+
+    /* メンバーカラー定義 (10色) */
+    --member-color-0: #3b82f6; /* ブルー */
+    --member-color-1: #f43f5e; /* ローズ */
+    --member-color-2: #f59e0b; /* アンバー */
+    --member-color-3: #10b981; /* エメラルド */
+    --member-color-4: #8b5cf6; /* パープル */
+    --member-color-5: #06b6d4; /* シアン */
+    --member-color-6: #ec4899; /* ピンク */
+    --member-color-7: #6366f1; /* インディゴ */
+    --member-color-8: #f97316; /* オレンジ */
+    --member-color-9: #84cc16; /* ライム */
 }
 
 /* ダークモード用変数 */
@@ -667,3 +679,298 @@ body {
         display: none !important;
     }
 }
+
+/* ==========================================================================
+   v2 新規追加スタイル
+   ========================================================================== */
+
+/* メンバー別のカラーユーティリティクラス */
+.m-color-0 { color: var(--member-color-0) !important; }
+.m-bg-0 { background-color: var(--member-color-0) !important; color: white !important; }
+.m-color-1 { color: var(--member-color-1) !important; }
+.m-bg-1 { background-color: var(--member-color-1) !important; color: white !important; }
+.m-color-2 { color: var(--member-color-2) !important; }
+.m-bg-2 { background-color: var(--member-color-2) !important; color: white !important; }
+.m-color-3 { color: var(--member-color-3) !important; }
+.m-bg-3 { background-color: var(--member-color-3) !important; color: white !important; }
+.m-color-4 { color: var(--member-color-4) !important; }
+.m-bg-4 { background-color: var(--member-color-4) !important; color: white !important; }
+.m-color-5 { color: var(--member-color-5) !important; }
+.m-bg-5 { background-color: var(--member-color-5) !important; color: white !important; }
+.m-color-6 { color: var(--member-color-6) !important; }
+.m-bg-6 { background-color: var(--member-color-6) !important; color: white !important; }
+.m-color-7 { color: var(--member-color-7) !important; }
+.m-bg-7 { background-color: var(--member-color-7) !important; color: white !important; }
+.m-color-8 { color: var(--member-color-8) !important; }
+.m-bg-8 { background-color: var(--member-color-8) !important; color: white !important; }
+.m-color-9 { color: var(--member-color-9) !important; }
+.m-bg-9 { background-color: var(--member-color-9) !important; color: white !important; }
+
+/* スマホ用曜日タブ */
+.day-tabs-container {
+    display: none;
+    gap: 0.35rem;
+    margin-bottom: 1rem;
+    overflow-x: auto;
+    padding: 0.25rem 0;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+}
+.day-tabs-container::-webkit-scrollbar {
+    display: none;
+}
+.day-tab {
+    flex: 1;
+    min-width: 50px;
+    padding: 0.6rem 0.3rem;
+    font-size: 0.85rem;
+    font-weight: 700;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-color);
+    background-color: var(--bg-card);
+    color: var(--text-muted);
+    cursor: pointer;
+    text-align: center;
+    transition: var(--transition-fast);
+}
+.day-tab.active {
+    background-color: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+    box-shadow: var(--shadow-sm);
+}
+
+/* スマホレイアウト時のグリッド制御 */
+@media (max-width: 600px) {
+    .day-tabs-container {
+        display: flex;
+    }
+    .timetable-grid.mobile-single-day {
+        grid-template-columns: 70px 1fr !important;
+        min-width: unset !important;
+    }
+    .timetable-grid.mobile-single-day .grid-cell {
+        display: none !important; /* デフォルト全て非表示 */
+    }
+    /* 時間ヘッダーの最初のセル、時限ラベル、およびアクティブな曜日のセルのみ表示 */
+    .timetable-grid.mobile-single-day .cell-label,
+    .timetable-grid.mobile-single-day .cell-header:first-child,
+    .timetable-grid.mobile-single-day .active-day {
+        display: flex !important;
+    }
+}
+
+/* 結果グリッド内のカラードット・インジケーター */
+.cell-result-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.15rem;
+    width: 100%;
+    height: 100%;
+}
+.dot-container {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 3px;
+    max-width: 90%;
+    margin-top: 2px;
+}
+.color-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    display: inline-block;
+    transition: transform 0.2s ease;
+}
+.color-dot:hover {
+    transform: scale(1.4);
+}
+
+/* パーフェクトマッチ（全員空き）の特別装飾 */
+.cell-result.perfect-match {
+    background: linear-gradient(135deg, #fef08a, #fde047) !important;
+    color: #854d0e !important;
+    border: 2px solid #eab308 !important;
+    animation: perfectPulse 2s infinite ease-in-out;
+    z-index: 2;
+}
+@media (prefers-color-scheme: dark) {
+    .cell-result.perfect-match {
+        background: linear-gradient(135deg, #713f12, #a16207) !important;
+        color: #fef08a !important;
+        border: 2px solid #eab308 !important;
+    }
+}
+@keyframes perfectPulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(234, 179, 8, 0.5); }
+    50% { box-shadow: 0 0 0 8px rgba(234, 179, 8, 0); }
+}
+
+/* メンバー編集中のインジケーターとコントロール */
+.edit-indicator {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background-color: var(--primary-light);
+    border: 1px solid var(--primary-color);
+    padding: 0.75rem 1rem;
+    border-radius: var(--radius-md);
+    margin-bottom: 1rem;
+    animation: slideDown 0.3s ease;
+}
+@media (prefers-color-scheme: dark) {
+    .edit-indicator {
+        background-color: rgba(59, 130, 246, 0.15);
+    }
+}
+.edit-indicator-text {
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: var(--primary-color);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+.btn-cancel-edit {
+    background: none;
+    border: 1px solid var(--primary-color);
+    color: var(--primary-color);
+    padding: 0.3rem 0.6rem;
+    border-radius: var(--radius-sm);
+    font-size: 0.75rem;
+    cursor: pointer;
+    font-weight: 700;
+    transition: var(--transition-fast);
+}
+.btn-cancel-edit:hover {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+/* スロット詳細パネル（タップしたセルの空き状況表示） */
+.slot-detail-panel {
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 1.25rem;
+    margin-top: 1rem;
+    box-shadow: var(--shadow-sm);
+    transition: all 0.3s ease;
+}
+.slot-detail-panel.hidden {
+    display: none;
+}
+.slot-detail-title {
+    font-size: 1rem;
+    font-weight: 700;
+    margin-bottom: 0.75rem;
+    color: var(--text-main);
+    border-left: 4px solid var(--primary-color);
+    padding-left: 0.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.slot-detail-close {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 0.2rem;
+    display: flex;
+    align-items: center;
+}
+.slot-detail-close:hover {
+    color: var(--text-main);
+}
+.slot-detail-members {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+.detail-member-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.35rem 0.75rem;
+    border-radius: var(--radius-full);
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: white;
+    box-shadow: var(--shadow-sm);
+}
+
+/* メンバーのアバターマーク */
+.member-avatar {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+    background-color: currentColor;
+}
+
+/* 決定通知コピーエリア */
+.decision-box {
+    margin-top: 1.5rem;
+    background-color: var(--bg-app);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 1.25rem;
+}
+@media (prefers-color-scheme: dark) {
+    .decision-box {
+        background-color: rgba(30, 41, 59, 0.5);
+    }
+}
+.decision-box h3 {
+    margin-bottom: 0.5rem;
+    color: var(--primary-color);
+}
+.decision-text-area {
+    width: 100%;
+    height: 100px;
+    background-color: var(--bg-card);
+    color: var(--text-main);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 0.75rem;
+    font-size: 0.85rem;
+    font-family: inherit;
+    resize: none;
+    margin-bottom: 0.75rem;
+    outline: none;
+    transition: border-color var(--transition-fast);
+}
+.decision-text-area:focus {
+    border-color: var(--primary-color);
+}
+
+/* 紙吹雪キャンバス */
+#confetti-canvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 9999;
+}
+
+/* おすすめ日程クリック時のフラッシュ効果 */
+@keyframes flash-highlight {
+    0%, 100% { outline: none; }
+    50% { background-color: rgba(254, 240, 138, 0.7); outline: 3px solid var(--accent-color); }
+}
+.flash-active {
+    animation: flash-highlight 0.5s ease 3;
+}
+
+/* スライドダウンアニメーション */
+@keyframes slideDown {
+    from { transform: translateY(-10px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+

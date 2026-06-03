@@ -28,12 +28,15 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <!-- 紙吹雪キャンバス -->
+    <canvas id="confetti-canvas"></canvas>
+
     <div class="app-container">
         <!-- ヘッダー -->
         <header class="app-header">
             <div class="logo-container">
                 <span class="logo-icon">📅</span>
-                <h1 class="logo-text">コマ合わせ <span class="logo-beta">v1.0</span></h1>
+                <h1 class="logo-text">コマ合わせ <span class="logo-beta">v2.0</span></h1>
             </div>
             <p class="tagline">LINEの面倒な予定調整を、タップだけで一瞬で解決！</p>
         </header>
@@ -53,6 +56,15 @@
                     <h2>あなたの名前を教えて！</h2>
                 </div>
                 <div class="card-body">
+                    <!-- 編集状態インジケーター -->
+                    <div id="edit-indicator" class="edit-indicator hidden">
+                        <span class="edit-indicator-text">
+                            <i data-lucide="edit-3" style="width: 16px; height: 16px;"></i>
+                            <span id="edit-member-name">〇〇さんの予定を編集中...</span>
+                        </span>
+                        <button type="button" id="btn-cancel-edit" class="btn-cancel-edit">キャンセル</button>
+                    </div>
+
                     <div class="input-group">
                         <label for="input-name" class="sr-only">名前</label>
                         <i data-lucide="user" class="input-icon"></i>
@@ -77,6 +89,11 @@
                         <button type="button" id="btn-toggle-weekend" class="toggle-switch" aria-label="土日表示切り替え">
                             <span class="toggle-slider"></span>
                         </button>
+                    </div>
+
+                    <!-- スマホ用曜日タブ -->
+                    <div id="day-tabs" class="day-tabs-container">
+                        <!-- JSで動的に生成 -->
                     </div>
 
                     <!-- 時間割グリッドコンテナ -->
@@ -125,7 +142,7 @@
                     <!-- 共通の空き時間ヒートマップ -->
                     <div class="results-grid-container">
                         <h3>空き時間ヒートマップ</h3>
-                        <p class="section-desc">色が濃いコマほど、多くのメンバーが空いている時間です！タップすると空いている人の名前が表示されます。</p>
+                        <p class="section-desc">色が濃いコマほど、多くのメンバーが空いている時間です！タップすると下に詳細な空き状況が表示されます。</p>
                         <div class="timetable-wrapper">
                             <div id="result-grid" class="timetable-grid results-grid">
                                 <!-- JSで動的に結果グリッドを生成します -->
@@ -133,12 +150,38 @@
                         </div>
                     </div>
 
+                    <!-- セル詳細表示パネル -->
+                    <div id="slot-detail-panel" class="slot-detail-panel hidden">
+                        <div class="slot-detail-title">
+                            <span id="slot-detail-time-label">月曜 1限 (9:00 - 10:30) の空き状況</span>
+                            <button type="button" id="btn-close-detail" class="slot-detail-close" aria-label="閉じる">
+                                <i data-lucide="x" style="width: 18px; height: 18px;"></i>
+                            </button>
+                        </div>
+                        <div id="slot-detail-members" class="slot-detail-members">
+                            <!-- JSで動的に空いている人のバッジを生成 -->
+                        </div>
+                    </div>
+
+                    <hr class="divider">
+
                     <!-- おすすめ時間帯のテキスト表示 -->
                     <div class="recommendations-box">
                         <h3>💡 おすすめの時間帯</h3>
                         <ul id="recommendation-list" class="recommendation-list">
                             <li>メンバーが登録されると、全員が空いている時間帯を自動で計算してここに提案します！</li>
                         </ul>
+                    </div>
+
+                    <!-- 予定決定＆コピーエリア -->
+                    <div id="decision-box" class="decision-box hidden">
+                        <h3>📅 日程の決定・コピー</h3>
+                        <p class="section-desc">おすすめ日程から「決定」を押すと、LINEに送信できる決定文章がここに生成されます。</p>
+                        <textarea id="decision-text" class="decision-text-area" readonly placeholder="日程を決定するとここに送信用の文章が生成されます"></textarea>
+                        <button type="button" id="btn-copy-decision" class="btn btn-primary" style="width: 100%;">
+                            <i data-lucide="copy"></i>
+                            <span>決定文章をコピー</span>
+                        </button>
                     </div>
                 </div>
             </section>

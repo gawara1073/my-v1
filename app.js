@@ -1,6 +1,6 @@
 /**
  * コマ合わせ (Koma-Awase) - アプリケーションロジック
- * v2.0.0 (アップグレード版)
+ * v3.0.0 (アップグレード版)
  */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -65,10 +65,23 @@ document.addEventListener('DOMContentLoaded', () => {
     const decisionText = document.getElementById('decision-text');
     const btnCopyDecision = document.getElementById('btn-copy-decision');
 
+    // v3新規DOM要素
+    const bestTimingContainer = document.getElementById('best-timing-container');
+    const bestTimingSlides = document.getElementById('best-timing-slides');
+    const bestTimingPrev = document.getElementById('best-timing-prev');
+    const bestTimingNext = document.getElementById('best-timing-next');
+    const bestTimingDots = document.getElementById('best-timing-dots');
+    const btnLineDirect = document.getElementById('btn-line-direct');
+    const btnThemeToggle = document.getElementById('btn-theme-toggle');
+    const themeToggleIcon = document.getElementById('theme-toggle-icon');
+
     // ---------------------------------------------------------
     // 3. 初期化処理
     // ---------------------------------------------------------
     function init() {
+        // テーマの初期設定
+        initTheme();
+
         // Lucideアイコンの初期化
         if (typeof lucide !== 'undefined') {
             lucide.createIcons();
@@ -92,6 +105,25 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // イベントリスナーの登録
         setupEventListeners();
+
+        // スマホ用左右スワイプジェスチャーの初期化
+        setupSwipeGestures();
+    }
+
+    // テーマ（ライト/ダーク）の初期化
+    function initTheme() {
+        const savedTheme = localStorage.getItem('koma-theme');
+        const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        
+        if (savedTheme === 'dark' || (!savedTheme && systemPrefersDark)) {
+            document.documentElement.classList.add('dark-theme');
+            document.documentElement.classList.remove('light-theme');
+            if (themeToggleIcon) themeToggleIcon.setAttribute('data-lucide', 'sun');
+        } else {
+            document.documentElement.classList.add('light-theme');
+            document.documentElement.classList.remove('dark-theme');
+            if (themeToggleIcon) themeToggleIcon.setAttribute('data-lucide', 'moon');
+        }
     }
 
     // ---------------------------------------------------------
@@ -283,6 +315,28 @@ document.addEventListener('DOMContentLoaded', () => {
     // 6. ドラッグ/スワイプによるインタラクション
     // ---------------------------------------------------------
     function setupEventListeners() {
+        // テーマ切り替え
+        if (btnThemeToggle) {
+            btnThemeToggle.addEventListener('click', () => {
+                const isDark = document.documentElement.classList.contains('dark-theme');
+                if (isDark) {
+                    document.documentElement.classList.remove('dark-theme');
+                    document.documentElement.classList.add('light-theme');
+                    localStorage.setItem('koma-theme', 'light');
+                    themeToggleIcon.setAttribute('data-lucide', 'moon');
+                } else {
+                    document.documentElement.classList.remove('light-theme');
+                    document.documentElement.classList.add('dark-theme');
+                    localStorage.setItem('koma-theme', 'dark');
+                    themeToggleIcon.setAttribute('data-lucide', 'sun');
+                }
+                if (typeof lucide !== 'undefined') {
+                    lucide.createIcons();
+                }
+                updateResults(); // ヒートマップ等の表示カラー再計算
+            });
+        }
+
         // 土日表示トグル
         btnToggleWeekend.addEventListener('click', () => {
             state.showWeekend = !state.showWeekend;
@@ -303,6 +357,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // LINE共有URLコピーボタン
         btnShareUrl.addEventListener('click', handleShareUrl);
+
+        // LINEで直接送るボタン
+        if (btnLineDirect) {
+            btnLineDirect.addEventListener('click', handleLineDirectShare);
+        }
+
+        // ベストタイミングカルーセルの制御
+        if (bestTimingPrev && bestTimingNext && bestTimingSlides) {
+            bestTimingPrev.addEventListener('click', () => {
+                const width = bestTimingSlides.querySelector('.best-timing-card')?.clientWidth || bestTimingSlides.clientWidth;
+                bestTimingSlides.scrollBy({ left: -width, behavior: 'smooth' });
+            });
+            bestTimingNext.addEventListener('click', () => {
+                const width = bestTimingSlides.querySelector('.best-timing-card')?.clientWidth || bestTimingSlides.clientWidth;
+                bestTimingSlides.scrollBy({ left: width, behavior: 'smooth' });
+            });
+            bestTimingSlides.addEventListener('scroll', () => {
+                updateCarouselDots();
+            });
+        }
 
         // 選択クリアボタン
         btnClearSelection.addEventListener('click', () => {
@@ -356,21 +430,28 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        // --- スマホ向けタッチイベント (スワイプなぞり選択) ---
+        // --- スマホ向けタッチイベント (スワイプなぞり選択・スクロールロック機能付き) ---
         selectionGrid.addEventListener('touchstart', (e) => {
             const cell = e.target.closest('.cell-slot');
             if (!cell) return;
             
+            // ドラッグ開始
             state.isDragging = true;
+            selectionGrid.classList.add('touch-locked');
             
             const cellKey = cell.dataset.key;
             state.dragMode = !state.currentSchedule.has(cellKey);
             state.lastTouchedCell = cell;
             toggleCellSelection(cell, cellKey, state.dragMode);
-        }, { passive: true });
+        }, { passive: false });
 
         selectionGrid.addEventListener('touchmove', (e) => {
             if (!state.isDragging) return;
+            
+            // タッチなぞり選択中は画面スクロールを強制的にキャンセル
+            if (e.cancelable) {
+                e.preventDefault();
+            }
             
             const touch = e.touches[0];
             const targetElement = document.elementFromPoint(touch.clientX, touch.clientY);
@@ -382,12 +463,18 @@ document.addEventListener('DOMContentLoaded', () => {
             state.lastTouchedCell = cell;
             const cellKey = cell.dataset.key;
             toggleCellSelection(cell, cellKey, state.dragMode);
-        });
+        }, { passive: false });
 
-        selectionGrid.addEventListener('touchend', () => {
-            state.isDragging = false;
-            state.lastTouchedCell = null;
-        });
+        const endTouchDrag = () => {
+            if (state.isDragging) {
+                state.isDragging = false;
+                state.lastTouchedCell = null;
+                selectionGrid.classList.remove('touch-locked');
+            }
+        };
+
+        selectionGrid.addEventListener('touchend', endTouchDrag);
+        selectionGrid.addEventListener('touchcancel', endTouchDrag);
     }
 
     function toggleCellSelection(cellElement, cellKey, select) {
@@ -685,87 +772,146 @@ document.addEventListener('DOMContentLoaded', () => {
                     } else {
                         cell.style.backgroundColor = `rgba(16, 185, 129, ${0.1 + ratio * 0.8})`;
                         cell.style.color = ratio > 0.5 ? '#ffffff' : 'var(--text-main)';
-                    }
-                }
+         function renderBestTimings(tieSlots, totalMembers) {
+        bestTimingSlides.innerHTML = '';
+        
+        const isMultiple = tieSlots.length > 1;
+        bestTimingPrev.style.display = isMultiple ? 'flex' : 'none';
+        bestTimingNext.style.display = isMultiple ? 'flex' : 'none';
+        bestTimingDots.style.display = isMultiple ? 'flex' : 'none';
+        
+        bestTimingDots.innerHTML = '';
+        
+        tieSlots.forEach((slot, index) => {
+            const card = document.createElement('div');
+            card.className = 'best-timing-card';
+            
+            const badgeText = isMultiple ? `👑 ベストタイミング候補 (${index + 1}/${tieSlots.length})` : '👑 ベストタイミング';
+            const badge = document.createElement('div');
+            badge.className = 'best-timing-badge';
+            badge.innerText = badgeText;
+            card.appendChild(badge);
+            
+            const content = document.createElement('div');
+            content.className = 'best-timing-content';
+            
+            const timeObj = PERIODS.find(p => p.num === slot.period);
+            const timeStr = timeObj ? ` (${timeObj.time})` : '';
+            const mainInfo = document.createElement('div');
+            mainInfo.className = 'best-timing-main';
+            mainInfo.innerText = `${slot.day}曜 ${slot.period}限${timeStr}`;
+            content.appendChild(mainInfo);
+            
+            const subInfo = document.createElement('div');
+            subInfo.className = 'best-timing-sub';
+            const percent = Math.round((slot.count / totalMembers) * 100);
+            subInfo.innerHTML = `🌟 <strong>${totalMembers}人中 ${slot.count}人</strong> が参加可能！ (一致率 ${percent}%)`;
+            content.appendChild(subInfo);
+            
+            const namesSection = document.createElement('div');
+            namesSection.className = 'best-timing-names-section';
+            
+            const activeIds = new Set(slot.members.map(m => m.name));
+            
+            const activeTitle = document.createElement('div');
+            activeTitle.className = 'best-timing-names-title';
+            activeTitle.innerText = '⭕ 参加できるメンバー:';
+            namesSection.appendChild(activeTitle);
+            
+            const activeList = document.createElement('div');
+            activeList.className = 'best-timing-names';
+            slot.members.forEach(m => {
+                const b = document.createElement('span');
+                b.className = `best-timing-name-badge m-bg-${m.colorIndex}`;
+                b.innerText = m.name;
+                activeList.appendChild(b);
+            });
+            namesSection.appendChild(activeList);
+            
+            const absentMembers = state.members.filter(m => !activeIds.has(m.name));
+            if (absentMembers.length > 0) {
+                const absentTitle = document.createElement('div');
+                absentTitle.className = 'best-timing-names-title';
+                absentTitle.innerText = '❌ 参加できないメンバー:';
+                namesSection.appendChild(absentTitle);
                 
-                ratioLabel.innerHTML = `<strong style="font-size: 1.1rem;">${freeCount}</strong><span style="font-size: 0.75rem; opacity: 0.8;">/${totalMembers}</span>`;
-                
-                // カラードットをセル内に並べる
-                if (dotContainer) {
-                    freeMembers.forEach(m => {
-                        const dot = document.createElement('span');
-                        dot.className = `color-dot m-bg-${m.colorIndex}`;
-                        dot.title = m.name;
-                        dotContainer.appendChild(dot);
+                const absentList = document.createElement('div');
+                absentList.className = 'best-timing-names';
+                absentMembers.forEach(m => {
+                    const b = document.createElement('span');
+                    b.className = 'best-timing-name-badge absent';
+                    b.innerText = m.name;
+                    absentList.appendChild(b);
+                });
+                namesSection.appendChild(absentList);
+            }
+            
+            content.appendChild(namesSection);
+            
+            const actions = document.createElement('div');
+            actions.className = 'best-timing-actions';
+            actions.innerHTML = `
+                <button type="button" class="btn btn-hero-decide btn-slot-decide" data-key="${slot.key}">
+                    <i data-lucide="check-circle"></i> この日程で決定！
+                </button>
+            `;
+            content.appendChild(actions);
+            
+            actions.querySelector('.btn-slot-decide').addEventListener('click', (e) => {
+                e.stopPropagation();
+                decideSlot(slot);
+            });
+            
+            card.appendChild(content);
+            bestTimingSlides.appendChild(card);
+            
+            if (isMultiple) {
+                const dot = document.createElement('button');
+                dot.type = 'button';
+                dot.className = `carousel-dot ${index === 0 ? 'active' : ''}`;
+                dot.addEventListener('click', () => {
+                    const cardWidth = card.clientWidth;
+                    bestTimingSlides.scrollTo({
+                        left: cardWidth * index,
+                        behavior: 'smooth'
                     });
-                }
-
-                // ツールチップテキスト
-                const names = freeMembers.map(m => m.name).join(', ');
-                cell.setAttribute('data-tooltip', `空き(${freeCount}人): ${names}`);
-            } else {
-                ratioLabel.innerText = '0';
-                cell.setAttribute('data-tooltip', '空いているメンバーはいません');
+                });
+                bestTimingDots.appendChild(dot);
             }
         });
-
-        // タップしたセル詳細表示イベントのバインド
-        setupResultCellClick();
-
-        // 3. おすすめ日程の生成
-        generateRecommendations(scoreBoard, totalMembers);
+        
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
+        
+        bestTimingContainer.classList.remove('hidden');
+        bestTimingSlides.scrollLeft = 0;
     }
 
-    function setupResultCellClick() {
-        const cells = resultGrid.querySelectorAll('.cell-result');
-        cells.forEach(cell => {
-            // イベントの重複登録防止のためクローンを作成するか、一旦クリア
-            const newCell = cell.cloneNode(true);
-            cell.parentNode.replaceChild(newCell, cell);
-
-            newCell.addEventListener('click', (e) => {
-                const key = newCell.dataset.resultKey;
-                if (!key || !state.scoreBoard[key]) return;
-
-                const [day, periodNum] = key.split('-');
-                const period = PERIODS.find(p => p.num === parseInt(periodNum));
-                const timeRange = period ? ` (${period.time})` : '';
-
-                const freeMembers = state.scoreBoard[key];
-
-                // 詳細パネルの更新
-                slotDetailTimeLabel.innerText = `${day}曜 ${periodNum}限${timeRange} の空き状況`;
-                slotDetailMembers.innerHTML = '';
-
-                if (freeMembers.length === 0) {
-                    slotDetailMembers.innerHTML = '<p class="no-members-msg" style="font-style:normal;">この時間に空いているメンバーはいません。</p>';
-                } else {
-                    freeMembers.forEach(m => {
-                        const badge = document.createElement('span');
-                        badge.className = `detail-member-badge m-bg-${m.colorIndex}`;
-                        badge.innerHTML = `<span class="member-avatar"></span> ${m.name}`;
-                        slotDetailMembers.appendChild(badge);
-                    });
-                }
-
-                slotDetailPanel.classList.remove('hidden');
-                slotDetailPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-            });
+    function updateCarouselDots() {
+        if (!bestTimingSlides || !bestTimingDots) return;
+        const cardEl = bestTimingSlides.querySelector('.best-timing-card');
+        const cardWidth = cardEl?.clientWidth || bestTimingSlides.clientWidth;
+        if (cardWidth === 0) return;
+        const index = Math.round(bestTimingSlides.scrollLeft / cardWidth);
+        
+        bestTimingDots.querySelectorAll('.carousel-dot').forEach((dot, idx) => {
+            dot.classList.toggle('active', idx === index);
         });
     }
 
     function generateRecommendations(scoreBoard, totalMembers) {
         recommendationList.innerHTML = '';
-        decisionBox.classList.add('hidden'); // 決定ボックスを一旦隠す
+        decisionBox.classList.add('hidden');
         
         if (totalMembers < 2) {
             const li = document.createElement('li');
             li.innerText = '2人以上のメンバーが追加されると、ここに最適なおすすめ時間帯を提案します！';
             recommendationList.appendChild(li);
+            bestTimingContainer.classList.add('hidden');
             return;
         }
 
-        // スコアの高い順にソート
         const sortedSlots = Object.entries(scoreBoard)
             .map(([key, list]) => {
                 const [day, period] = key.split('-');
@@ -785,25 +931,53 @@ document.addEventListener('DOMContentLoaded', () => {
             const li = document.createElement('li');
             li.innerText = '全員の予定が完全にすれ違っています！別の日程を検討するか、選択肢を増やしてみてね。';
             recommendationList.appendChild(li);
+            bestTimingContainer.classList.add('hidden');
             return;
         }
 
-        // 上位3つの候補
-        const topSlots = sortedSlots.slice(0, 3);
+        // 最も人数が多い時間帯（同率1位をすべて集約）
+        const maxCount = sortedSlots[0].count;
+        const maxCountRatio = maxCount / totalMembers;
+        const tieSlots = sortedSlots.filter(slot => slot.count === maxCount);
+
+        // 閾値チェック: 一致した人が1人だけ、または一致率が50%未満の場合はベストタイミングを表示しない
+        if (maxCount < 2 || maxCountRatio < 0.5) {
+            bestTimingContainer.classList.add('hidden');
+        } else {
+            renderBestTimings(tieSlots, totalMembers);
+        }
+
+        // ベストタイミングに使われた以外の、2位以下の候補を「全ての候補一覧」として表示
+        // (最大5つまで表示)
+        const bestKeys = new Set(tieSlots.map(s => s.key));
+        const otherSlots = sortedSlots.filter(s => !bestKeys.has(s.key)).slice(0, 5);
         
-        topSlots.forEach((slot, index) => {
+        if (otherSlots.length === 0 && tieSlots.length > 0) {
+            // 他の候補がなく、ベスト候補のみの場合は説明を表示
             const li = document.createElement('li');
+            li.innerText = '他の空き時間の候補はありません。上のベストタイミングを検討してください！';
+            recommendationList.appendChild(li);
+            return;
+        } else if (otherSlots.length === 0) {
+            const li = document.createElement('li');
+            li.innerText = '他にも候補があればここに表示されます。';
+            recommendationList.appendChild(li);
+            return;
+        }
+
+        otherSlots.forEach((slot, index) => {
+            const li = document.createElement('li');
+            li.className = 'recommendation-item-v3';
             li.style.flexDirection = 'column';
             li.style.alignItems = 'flex-start';
             li.style.gap = '0.5rem';
-            li.style.padding = '0.75rem';
+            li.style.padding = '1rem';
             li.style.borderRadius = 'var(--radius-sm)';
             li.style.backgroundColor = 'var(--bg-app)';
             li.style.border = '1px solid var(--border-color)';
             li.style.cursor = 'pointer';
             li.style.transition = 'var(--transition-fast)';
 
-            // ホバー効果用スタイル追加
             li.addEventListener('mouseenter', () => {
                 li.style.borderColor = 'var(--primary-color)';
                 li.style.boxShadow = 'var(--shadow-sm)';
@@ -821,12 +995,11 @@ document.addEventListener('DOMContentLoaded', () => {
             if (slot.count === totalMembers) {
                 textHtml = `<div><strong>👑 【超おすすめ】${slot.day}曜${slot.period}限</strong> ${timeRange} - <strong>全員空いてます！✨</strong></div>`;
             } else {
-                textHtml = `<div><strong>💡 【第${index + 1}候補】${slot.day}曜${slot.period}限</strong> ${timeRange} - <strong>${totalMembers}人中 ${slot.count}人 空き</strong> (${percent}%)</div>`;
+                textHtml = `<div><strong>💡 【候補】${slot.day}曜${slot.period}限</strong> ${timeRange} - <strong>${totalMembers}人中 ${slot.count}人 空き</strong> (${percent}%)</div>`;
             }
             
             textHtml += `<div style="font-size:0.75rem; color:var(--text-muted); margin-left:1.5rem;">空き: ${slot.names.join(', ')}</div>`;
             
-            // 操作ボタン
             textHtml += `
                 <div style="display:flex; gap:0.5rem; width:100%; justify-content:flex-end; margin-top:0.25rem;">
                     <button type="button" class="btn btn-outline btn-slot-locate" style="padding:0.25rem 0.5rem; font-size:0.75rem;" data-key="${slot.key}">
@@ -841,19 +1014,16 @@ document.addEventListener('DOMContentLoaded', () => {
             li.innerHTML = textHtml;
             recommendationList.appendChild(li);
 
-            // 位置確認クリック
             li.querySelector('.btn-slot-locate').addEventListener('click', (e) => {
                 e.stopPropagation();
                 flashSlot(slot.key);
             });
             
-            // 日程決定クリック
             li.querySelector('.btn-slot-decide').addEventListener('click', (e) => {
                 e.stopPropagation();
                 decideSlot(slot);
             });
 
-            // 項目全体クリック時も位置確認
             li.addEventListener('click', () => {
                 flashSlot(slot.key);
             });
@@ -862,7 +1032,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (typeof lucide !== 'undefined') {
             lucide.createIcons();
         }
-    }
+
 
     function flashSlot(cellKey) {
         const cell = resultGrid.querySelector(`[data-result-key="${cellKey}"]`);
@@ -1107,6 +1277,106 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         draw();
+    }
+
+    // LINEへ直接送信する処理
+    function handleLineDirectShare() {
+        if (state.members.length === 0 && state.currentSchedule.size === 0) {
+            showToast('まずは名前と空き時間を入力して、メンバーに追加するか、入力を行ってください！', 4000);
+            return;
+        }
+
+        if (state.currentName && state.currentSchedule.size > 0) {
+            if (confirm(`現在入力中の「${state.currentName}」さんのデータを追加してからLINEで共有しますか？`)) {
+                handleAddMember();
+            }
+        }
+
+        try {
+            const exportData = {
+                w: state.showWeekend ? 1 : 0,
+                m: state.members.map(member => ({
+                    n: member.name,
+                    s: member.schedule
+                }))
+            };
+
+            const jsonString = JSON.stringify(exportData);
+            const encodedData = btoa(encodeURIComponent(jsonString).replace(/%([0-9A-F]{2})/g, (match, p1) => {
+                return String.fromCharCode(parseInt(p1, 16));
+            }));
+
+            const url = new URL(window.location.href);
+            url.searchParams.set('d', encodedData);
+            
+            const shareText = `【コマ合わせ】友達と空き時間を調整中！📅\n全員の予定が合うコマを見つけよう！下のリンクからあなたの空き時間を追加してね！\n\n${url.toString()}`;
+            
+            // LINE共有URLスキーム
+            const lineUrl = `https://line.me/R/share?text=${encodeURIComponent(shareText)}`;
+            
+            // LINEを開く
+            window.open(lineUrl, '_blank');
+            showToast('🎉 LINEの送信画面を開きました！', 4000);
+            
+        } catch (error) {
+            console.error('LINE共有エラー:', error);
+            showToast('LINE共有URLの作成に失敗しました。', 3000);
+        }
+    }
+
+    // スマホ用左右フリックによる曜日切り替えジェスチャー
+    function setupSwipeGestures() {
+        let startX = 0;
+        let endX = 0;
+        
+        const handleTouchStart = (e) => {
+            if (state.isDragging) return;
+            startX = e.touches[0].clientX;
+        };
+        
+        const handleTouchEnd = (e) => {
+            if (state.isDragging) return;
+            
+            endX = e.changedTouches[0].clientX;
+            const diffX = startX - endX;
+            
+            const days = getActiveDays();
+            if (days.length <= 1) return;
+            
+            const currentIdx = days.indexOf(state.selectedDayMobile);
+            if (currentIdx === -1) return;
+            
+            // 80px以上のスライドで曜日切り替え
+            if (diffX > 80) {
+                // 左スワイプ -> 次の曜日
+                const nextIdx = (currentIdx + 1) % days.length;
+                state.selectedDayMobile = days[nextIdx];
+                triggerDayChange();
+            } else if (diffX < -80) {
+                // 右スワイプ -> 前の曜日
+                const prevIdx = (currentIdx - 1 + days.length) % days.length;
+                state.selectedDayMobile = days[prevIdx];
+                triggerDayChange();
+            }
+        };
+        
+        function triggerDayChange() {
+            renderDayTabs();
+            updateGridMobileClasses();
+        }
+        
+        // 選択グリッドと結果グリッドのラッパーコンテナを監視
+        const selectionWrapper = selectionGrid.closest('.timetable-wrapper');
+        const resultWrapper = resultGrid.closest('.timetable-wrapper');
+        
+        if (selectionWrapper) {
+            selectionWrapper.addEventListener('touchstart', handleTouchStart, { passive: true });
+            selectionWrapper.addEventListener('touchend', handleTouchEnd, { passive: true });
+        }
+        if (resultWrapper) {
+            resultWrapper.addEventListener('touchstart', handleTouchStart, { passive: true });
+            resultWrapper.addEventListener('touchend', handleTouchEnd, { passive: true });
+        }
     }
 
     // アプリの起動

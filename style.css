@@ -2,71 +2,89 @@
    コマ合わせ (Koma-Awase) - メインスタイルシート
    ========================================================================== */
 
-/* 1. 変数定義 (Design System Tokens) */
+/* 1. 変数定義 (Design System Tokens v3.0) */
 :root {
-    /* カラーパレット (ライトモード) */
-    --primary-color: #3b82f6;      /* ソフトブルー */
-    --primary-light: #eff6ff;
-    --secondary-color: #10b981;    /* ミントグリーン */
+    /* カラーパレット (ライトモード) - より鮮やかでモダンに */
+    --primary-color: #4f46e5;      /* インディゴブルー */
+    --primary-light: #eef2ff;
+    --primary-glow: rgba(79, 70, 229, 0.2);
+    
+    --secondary-color: #10b981;    /* エメラルドグリーン */
     --secondary-light: #ecfdf5;
+    
     --accent-color: #f59e0b;       /* コーラルオレンジ */
     --danger-color: #ef4444;       /* レッド */
     
-    --bg-app: #f8fafc;             /* アプリ背景 (淡いグレー) */
-    --bg-card: #ffffff;            /* カード背景 */
+    --bg-app: #f1f5f9;             /* アプリ背景 */
+    --bg-card: rgba(255, 255, 255, 0.85); /* グラスモーフィズム用 */
     --border-color: #e2e8f0;       /* 境界線 */
     
-    --text-main: #1e293b;          /* メインテキスト (濃いグレー) */
+    --text-main: #0f172a;          /* メインテキスト */
     --text-muted: #64748b;         /* サブテキスト */
     --text-white: #ffffff;
     
     --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05);
-    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
-    --shadow-glow: 0 10px 25px -5px rgba(59, 130, 246, 0.2);
+    --shadow-md: 0 8px 20px -4px rgba(0, 0, 0, 0.08);
+    --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+    --shadow-glow: 0 0 20px var(--primary-glow);
 
-    --radius-sm: 8px;
-    --radius-md: 16px;
-    --radius-lg: 24px;
+    --radius-sm: 10px;
+    --radius-md: 20px;
+    --radius-lg: 32px;
     --radius-full: 9999px;
     
     --font-sans: 'Noto Sans JP', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     --font-outfit: 'Outfit', sans-serif;
     
-    --transition-fast: 0.15s ease;
-    --transition-normal: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-fast: 0.2s ease;
+    --transition-normal: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    
+    --glass-blur: blur(12px);
 
-    /* メンバーカラー定義 (10色) */
-    --member-color-0: #3b82f6; /* ブルー */
-    --member-color-1: #f43f5e; /* ローズ */
-    --member-color-2: #f59e0b; /* アンバー */
-    --member-color-3: #10b981; /* エメラルド */
-    --member-color-4: #8b5cf6; /* パープル */
-    --member-color-5: #06b6d4; /* シアン */
-    --member-color-6: #ec4899; /* ピンク */
-    --member-color-7: #6366f1; /* インディゴ */
-    --member-color-8: #f97316; /* オレンジ */
-    --member-color-9: #84cc16; /* ライム */
+    /* メンバーカラー定義 (v3: より鮮やかな10色) */
+    --member-color-0: #4f46e5; /* Indigo */
+    --member-color-1: #f43f5e; /* Rose */
+    --member-color-2: #eab308; /* Yellow */
+    --member-color-3: #10b981; /* Emerald */
+    --member-color-4: #8b5cf6; /* Violet */
+    --member-color-5: #06b6d4; /* Cyan */
+    --member-color-6: #ec4899; /* Pink */
+    --member-color-7: #f97316; /* Orange */
+    --member-color-8: #84cc16; /* Lime */
+    --member-color-9: #6366f1; /* Indigo alt */
 }
 
-/* ダークモード用変数 */
+/* ダークモード用変数 (OS設定連動、かつ明示的なクラス指定を優先) */
 @media (prefers-color-scheme: dark) {
-    :root {
-        --bg-app: #0f172a;         /* ディープスレートネイビー */
-        --bg-card: #1e293b;        /* カード背景 */
-        --border-color: #334155;
+    :root:not(.light-theme) {
+        --bg-app: #030712;         /* 超深色ネイビー */
+        --bg-card: rgba(17, 24, 39, 0.75);
+        --border-color: rgba(255, 255, 255, 0.08);
         
         --text-main: #f8fafc;
         --text-muted: #94a3b8;
         
-        --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.2);
-        --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.2), 0 2px 4px -1px rgba(0, 0, 0, 0.1);
-        --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.15);
-        --shadow-glow: 0 10px 25px -5px rgba(59, 130, 246, 0.4);
+        --shadow-md: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+        --shadow-glow: 0 0 25px rgba(79, 70, 229, 0.25);
         
-        --primary-light: #172554;
-        --secondary-light: #022c22;
+        --primary-light: rgba(79, 70, 229, 0.15);
+        --secondary-light: rgba(16, 185, 129, 0.15);
     }
+}
+
+:root.dark-theme {
+    --bg-app: #030712;         /* 超深色ネイビー */
+    --bg-card: rgba(17, 24, 39, 0.75);
+    --border-color: rgba(255, 255, 255, 0.08);
+    
+    --text-main: #f8fafc;
+    --text-muted: #94a3b8;
+    
+    --shadow-md: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+    --shadow-glow: 0 0 25px rgba(79, 70, 229, 0.25);
+    
+    --primary-light: rgba(79, 70, 229, 0.15);
+    --secondary-light: rgba(16, 185, 129, 0.15);
 }
 
 /* 2. リセット & ベーススタイル */
@@ -79,6 +97,13 @@
 body {
     font-family: var(--font-sans);
     background-color: var(--bg-app);
+    /* 動的アニメーションオーロラ背景 */
+    background-image: 
+        radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.1) 0px, transparent 50%),
+        radial-gradient(at 100% 0%, rgba(16, 185, 129, 0.08) 0px, transparent 50%),
+        radial-gradient(at 50% 100%, rgba(239, 68, 68, 0.05) 0px, transparent 50%);
+    background-size: 200% 200%;
+    animation: auroraBG 20s ease infinite;
     color: var(--text-main);
     line-height: 1.6;
     -webkit-font-smoothing: antialiased;
@@ -87,6 +112,13 @@ body {
     min-height: 100vh;
     display: flex;
     justify-content: center;
+    transition: background-color 0.5s ease, color 0.3s ease;
+}
+
+@keyframes auroraBG {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
 }
 
 /* スクリーンリーダー用非表示クラス */
@@ -164,15 +196,19 @@ body {
 /* 5. カードスタイル */
 .card {
     background-color: var(--bg-card);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
     border-radius: var(--radius-md);
     border: 1px solid var(--border-color);
-    box-shadow: var(--shadow-sm);
+    box-shadow: var(--shadow-md);
     overflow: hidden;
     transition: var(--transition-normal);
+    animation: fadeIn 0.6s ease-out backwards;
 }
 
 .card:hover {
-    box-shadow: var(--shadow-md);
+    box-shadow: var(--shadow-lg);
+    border-color: rgba(79, 70, 229, 0.3);
 }
 
 .card-header {
@@ -681,36 +717,134 @@ body {
 }
 
 /* ==========================================================================
-   v2 新規追加スタイル
+   v3 新規追加スタイル (ヒーローセクション & リッチデザイン)
    ========================================================================== */
 
+/* ヒーローセクション（ベストタイミング表示） */
+.best-timing-container {
+    margin: 1rem 0 2rem 0;
+    perspective: 1000px;
+}
+
+.best-timing-card {
+    background: linear-gradient(135deg, var(--primary-color), #3730a3);
+    color: white;
+    padding: 1.5rem;
+    border-radius: var(--radius-md);
+    position: relative;
+    overflow: hidden;
+    box-shadow: var(--shadow-glow);
+    animation: slideUp 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.best-timing-card::before {
+    content: "";
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 60%);
+    animation: rotateBackground 10s linear infinite;
+}
+
+@keyframes rotateBackground {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.best-timing-badge {
+    display: inline-block;
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(4px);
+    padding: 0.25rem 0.75rem;
+    border-radius: var(--radius-full);
+    font-size: 0.75rem;
+    font-weight: 800;
+    margin-bottom: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.best-timing-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    position: relative;
+    z-index: 1;
+}
+
+.best-timing-main {
+    font-size: 1.8rem;
+    font-weight: 900;
+    font-family: var(--font-outfit);
+    line-height: 1.2;
+    margin-bottom: 0.25rem;
+}
+
+.best-timing-sub {
+    font-size: 0.95rem;
+    opacity: 0.9;
+    font-weight: 500;
+}
+
+.best-timing-names {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-top: 0.5rem;
+}
+
+.best-timing-name-badge {
+    background: rgba(255, 255, 255, 0.15);
+    padding: 0.2rem 0.6rem;
+    border-radius: var(--radius-sm);
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+
+.best-timing-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 1rem;
+}
+
+.btn-hero-decide {
+    background-color: white;
+    color: var(--primary-color) !important;
+    padding: 0.6rem 1.2rem;
+    font-size: 0.9rem;
+    border-radius: var(--radius-md);
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    transition: var(--transition-fast);
+}
+
+.btn-hero-decide:hover {
+    background-color: #f8fafc;
+    transform: scale(1.03);
+}
+
 /* メンバー別のカラーユーティリティクラス */
-.m-color-0 { color: var(--member-color-0) !important; }
 .m-bg-0 { background-color: var(--member-color-0) !important; color: white !important; }
-.m-color-1 { color: var(--member-color-1) !important; }
 .m-bg-1 { background-color: var(--member-color-1) !important; color: white !important; }
-.m-color-2 { color: var(--member-color-2) !important; }
 .m-bg-2 { background-color: var(--member-color-2) !important; color: white !important; }
-.m-color-3 { color: var(--member-color-3) !important; }
 .m-bg-3 { background-color: var(--member-color-3) !important; color: white !important; }
-.m-color-4 { color: var(--member-color-4) !important; }
 .m-bg-4 { background-color: var(--member-color-4) !important; color: white !important; }
-.m-color-5 { color: var(--member-color-5) !important; }
 .m-bg-5 { background-color: var(--member-color-5) !important; color: white !important; }
-.m-color-6 { color: var(--member-color-6) !important; }
 .m-bg-6 { background-color: var(--member-color-6) !important; color: white !important; }
-.m-color-7 { color: var(--member-color-7) !important; }
 .m-bg-7 { background-color: var(--member-color-7) !important; color: white !important; }
-.m-color-8 { color: var(--member-color-8) !important; }
 .m-bg-8 { background-color: var(--member-color-8) !important; color: white !important; }
-.m-color-9 { color: var(--member-color-9) !important; }
 .m-bg-9 { background-color: var(--member-color-9) !important; color: white !important; }
 
 /* スマホ用曜日タブ */
 .day-tabs-container {
     display: none;
-    gap: 0.35rem;
-    margin-bottom: 1rem;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
     overflow-x: auto;
     padding: 0.25rem 0;
     scrollbar-width: none;
@@ -721,9 +855,9 @@ body {
 }
 .day-tab {
     flex: 1;
-    min-width: 50px;
-    padding: 0.6rem 0.3rem;
-    font-size: 0.85rem;
+    min-width: 60px;
+    padding: 0.75rem 0.5rem;
+    font-size: 0.9rem;
     font-weight: 700;
     border-radius: var(--radius-sm);
     border: 1px solid var(--border-color);
@@ -734,10 +868,11 @@ body {
     transition: var(--transition-fast);
 }
 .day-tab.active {
-    background-color: var(--primary-color);
+    background: linear-gradient(135deg, var(--primary-color), #2563eb);
     color: white;
-    border-color: var(--primary-color);
-    box-shadow: var(--shadow-sm);
+    border-color: transparent;
+    box-shadow: 0 4px 12px var(--primary-glow);
+    transform: translateY(-2px);
 }
 
 /* スマホレイアウト時のグリッド制御 */
@@ -746,13 +881,12 @@ body {
         display: flex;
     }
     .timetable-grid.mobile-single-day {
-        grid-template-columns: 70px 1fr !important;
+        grid-template-columns: 75px 1fr !important;
         min-width: unset !important;
     }
     .timetable-grid.mobile-single-day .grid-cell {
-        display: none !important; /* デフォルト全て非表示 */
+        display: none !important;
     }
-    /* 時間ヘッダーの最初のセル、時限ラベル、およびアクティブな曜日のセルのみ表示 */
     .timetable-grid.mobile-single-day .cell-label,
     .timetable-grid.mobile-single-day .cell-header:first-child,
     .timetable-grid.mobile-single-day .active-day {
@@ -760,43 +894,15 @@ body {
     }
 }
 
-/* 結果グリッド内のカラードット・インジケーター */
-.cell-result-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 0.15rem;
-    width: 100%;
-    height: 100%;
-}
-.dot-container {
-    display: flex;
-    justify-content: center;
-    flex-wrap: wrap;
-    gap: 3px;
-    max-width: 90%;
-    margin-top: 2px;
-}
-.color-dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    display: inline-block;
-    transition: transform 0.2s ease;
-}
-.color-dot:hover {
-    transform: scale(1.4);
-}
-
 /* パーフェクトマッチ（全員空き）の特別装飾 */
 .cell-result.perfect-match {
-    background: linear-gradient(135deg, #fef08a, #fde047) !important;
+    background: linear-gradient(135deg, #fef9c3, #fde047) !important;
     color: #854d0e !important;
     border: 2px solid #eab308 !important;
     animation: perfectPulse 2s infinite ease-in-out;
     z-index: 2;
 }
+
 @media (prefers-color-scheme: dark) {
     .cell-result.perfect-match {
         background: linear-gradient(135deg, #713f12, #a16207) !important;
@@ -804,151 +910,46 @@ body {
         border: 2px solid #eab308 !important;
     }
 }
+
 @keyframes perfectPulse {
     0%, 100% { box-shadow: 0 0 0 0 rgba(234, 179, 8, 0.5); }
     50% { box-shadow: 0 0 0 8px rgba(234, 179, 8, 0); }
 }
 
-/* メンバー編集中のインジケーターとコントロール */
+/* メンバー編集中のインジケーター */
 .edit-indicator {
     display: flex;
     align-items: center;
     justify-content: space-between;
     background-color: var(--primary-light);
     border: 1px solid var(--primary-color);
-    padding: 0.75rem 1rem;
+    padding: 0.85rem 1.25rem;
     border-radius: var(--radius-md);
-    margin-bottom: 1rem;
-    animation: slideDown 0.3s ease;
-}
-@media (prefers-color-scheme: dark) {
-    .edit-indicator {
-        background-color: rgba(59, 130, 246, 0.15);
-    }
-}
-.edit-indicator-text {
-    font-weight: 700;
-    font-size: 0.9rem;
-    color: var(--primary-color);
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-.btn-cancel-edit {
-    background: none;
-    border: 1px solid var(--primary-color);
-    color: var(--primary-color);
-    padding: 0.3rem 0.6rem;
-    border-radius: var(--radius-sm);
-    font-size: 0.75rem;
-    cursor: pointer;
-    font-weight: 700;
-    transition: var(--transition-fast);
-}
-.btn-cancel-edit:hover {
-    background-color: var(--primary-color);
-    color: white;
+    margin-bottom: 1.5rem;
+    animation: slideDown 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
-/* スロット詳細パネル（タップしたセルの空き状況表示） */
 .slot-detail-panel {
     background-color: var(--bg-card);
+    backdrop-filter: var(--glass-blur);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-md);
-    padding: 1.25rem;
-    margin-top: 1rem;
-    box-shadow: var(--shadow-sm);
-    transition: all 0.3s ease;
-}
-.slot-detail-panel.hidden {
-    display: none;
-}
-.slot-detail-title {
-    font-size: 1rem;
-    font-weight: 700;
-    margin-bottom: 0.75rem;
-    color: var(--text-main);
-    border-left: 4px solid var(--primary-color);
-    padding-left: 0.5rem;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-.slot-detail-close {
-    background: none;
-    border: none;
-    color: var(--text-muted);
-    cursor: pointer;
-    padding: 0.2rem;
-    display: flex;
-    align-items: center;
-}
-.slot-detail-close:hover {
-    color: var(--text-main);
-}
-.slot-detail-members {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-}
-.detail-member-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.35rem;
-    padding: 0.35rem 0.75rem;
-    border-radius: var(--radius-full);
-    font-size: 0.8rem;
-    font-weight: 700;
-    color: white;
-    box-shadow: var(--shadow-sm);
-}
-
-/* メンバーのアバターマーク */
-.member-avatar {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    display: inline-block;
-    background-color: currentColor;
-}
-
-/* 決定通知コピーエリア */
-.decision-box {
+    padding: 1.5rem;
     margin-top: 1.5rem;
-    background-color: var(--bg-app);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-md);
-    padding: 1.25rem;
-}
-@media (prefers-color-scheme: dark) {
-    .decision-box {
-        background-color: rgba(30, 41, 59, 0.5);
-    }
-}
-.decision-box h3 {
-    margin-bottom: 0.5rem;
-    color: var(--primary-color);
-}
-.decision-text-area {
-    width: 100%;
-    height: 100px;
-    background-color: var(--bg-card);
-    color: var(--text-main);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-md);
-    padding: 0.75rem;
-    font-size: 0.85rem;
-    font-family: inherit;
-    resize: none;
-    margin-bottom: 0.75rem;
-    outline: none;
-    transition: border-color var(--transition-fast);
-}
-.decision-text-area:focus {
-    border-color: var(--primary-color);
+    box-shadow: var(--shadow-lg);
+    animation: fadeIn 0.4s ease-out;
 }
 
-/* 紙吹雪キャンバス */
+.decision-box {
+    margin-top: 2rem;
+    background: var(--bg-card);
+    backdrop-filter: var(--glass-blur);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 1.5rem;
+    box-shadow: var(--shadow-md);
+}
+
 #confetti-canvas {
     position: fixed;
     top: 0;
@@ -959,18 +960,211 @@ body {
     z-index: 9999;
 }
 
-/* おすすめ日程クリック時のフラッシュ効果 */
 @keyframes flash-highlight {
     0%, 100% { outline: none; }
-    50% { background-color: rgba(254, 240, 138, 0.7); outline: 3px solid var(--accent-color); }
-}
-.flash-active {
-    animation: flash-highlight 0.5s ease 3;
+    50% { background-color: rgba(79, 70, 229, 0.2); outline: 4px solid var(--primary-color); }
 }
 
-/* スライドダウンアニメーション */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
 @keyframes slideDown {
-    from { transform: translateY(-10px); opacity: 0; }
+    from { transform: translateY(-20px); opacity: 0; }
     to { transform: translateY(0); opacity: 1; }
 }
+
+@keyframes slideUp {
+    from { transform: translateY(30px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+/* ==========================================================================
+   v3 新規スタイル定義 (テーマ切り替え、カルーセル、LINE直通、モバイル強化)
+   ========================================================================== */
+
+/* 手動テーマ切り替えボタン */
+.theme-toggle-container {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    z-index: 100;
+}
+
+.btn-theme-toggle {
+    background-color: var(--bg-card);
+    backdrop-filter: var(--glass-blur);
+    border: 1px solid var(--border-color);
+    color: var(--text-main);
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-full);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: var(--shadow-sm);
+    transition: var(--transition-normal);
+}
+
+.btn-theme-toggle:hover {
+    transform: rotate(15deg) scale(1.1);
+    box-shadow: var(--shadow-md);
+    border-color: var(--primary-color);
+}
+
+.btn-theme-toggle svg {
+    width: 20px;
+    height: 20px;
+}
+
+/* カルーセル化されたベストタイミング表示 */
+.best-timing-carousel-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+.best-timing-slides {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none; /* Firefox用 */
+    -webkit-overflow-scrolling: touch;
+    gap: 1.5rem;
+    padding: 0.25rem;
+}
+
+.best-timing-slides::-webkit-scrollbar {
+    display: none; /* Chrome/Safari用 */
+}
+
+.best-timing-card {
+    flex: 0 0 100%;
+    scroll-snap-align: start;
+    box-sizing: border-box;
+}
+
+/* 左右ナビゲーション矢印 */
+.carousel-nav-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(255, 255, 255, 0.25);
+    backdrop-filter: blur(4px);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    color: white;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 5;
+    transition: var(--transition-fast);
+}
+
+.carousel-nav-btn:hover {
+    background: rgba(255, 255, 255, 0.4);
+    transform: translateY(-50%) scale(1.1);
+}
+
+.carousel-nav-btn.prev {
+    left: -12px;
+}
+
+.carousel-nav-btn.next {
+    right: -12px;
+}
+
+/* カルーセルドットインジケーター */
+.carousel-dots {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+}
+
+.carousel-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: var(--border-color);
+    border: none;
+    cursor: pointer;
+    transition: var(--transition-fast);
+}
+
+.carousel-dot.active {
+    background-color: var(--primary-color);
+    width: 18px;
+    border-radius: var(--radius-full);
+}
+
+/* 不参加メンバー表示バッジ */
+.best-timing-names-section {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.best-timing-names-title {
+    font-size: 0.75rem;
+    font-weight: 700;
+    opacity: 0.8;
+}
+
+.best-timing-name-badge.absent {
+    background: rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.5) !important;
+    text-decoration: line-through;
+    border: 1px dashed rgba(255, 255, 255, 0.2);
+}
+
+/* LINE風カラーボタン */
+.btn-line {
+    background: linear-gradient(135deg, #06c755, #05b04b);
+    color: var(--text-white);
+}
+
+.btn-line:hover {
+    box-shadow: 0 10px 25px -5px rgba(6, 199, 85, 0.3);
+    transform: translateY(-1px);
+}
+
+/* グリッドなぞり中のスクロール無効化用クラス (JSで使用) */
+.touch-locked {
+    touch-action: none !important;
+    overflow: hidden !important;
+}
+
+/* スワイプ操作案内用のアニメーションヒント */
+.swipe-hint-container {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    margin: -0.5rem 0 0.75rem 0;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+.swipe-hint-icon {
+    animation: swipeHand 1.8s ease-in-out infinite;
+}
+
+@keyframes swipeHand {
+    0% { transform: translateX(10px); opacity: 0.2; }
+    50% { transform: translateX(-10px); opacity: 1; }
+    100% { transform: translateX(10px); opacity: 0.2; }
+}
+
+@media (max-width: 600px) {
+    .swipe-hint-container {
+        display: flex;
+    }
+}
+
 

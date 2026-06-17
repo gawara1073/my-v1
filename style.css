@@ -426,18 +426,46 @@ body {
     cursor: grabbing;
 }
 
-/* 9. 結果表示グリッド & ヒートマップ */
+/* 9. 結果表示グリッド & ヒートマップ (v4強化版) */
 .results-grid {
-    pointer-events: auto; /* クリックでツールチップ表示 */
+    pointer-events: auto;
 }
 
-/* ヒートマップ背景色のグラデーション定義 (参加人数に応じてJSで強度を動的に設定) */
+/* 一致率に応じた動的クラス (JSで付与) */
+.match-100 { background-color: #10b981 !important; color: white !important; }
+.match-75 { background-color: #34d399 !important; color: white !important; }
+.match-50 { background-color: #fbbf24 !important; color: #1e293b !important; }
+.match-25 { background-color: #fef3c7 !important; color: #1e293b !important; }
+.match-0 { background-color: var(--bg-card); color: var(--text-muted); opacity: 0.5; }
+
+/* 100%一致時の特別演出 */
+.perfect-match {
+    background: linear-gradient(135deg, #10b981, #059669) !important;
+    box-shadow: inset 0 0 10px rgba(255, 255, 255, 0.4);
+    position: relative;
+    z-index: 1;
+}
+
+.perfect-match::before {
+    content: "👑";
+    position: absolute;
+    top: -5px;
+    right: -2px;
+    font-size: 0.7rem;
+}
+
 .cell-result {
     font-size: 0.75rem;
-    font-weight: 700;
+    font-weight: 800;
     position: relative;
-    cursor: help;
+    cursor: pointer;
+    transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), background-color 0.3s ease;
 }
+
+.cell-result:active {
+    transform: scale(0.92);
+}
+
 
 /* ホバー時のツールチップ用スタイル */
 .cell-result::after {
@@ -720,53 +748,59 @@ body {
    v3 新規追加スタイル (ヒーローセクション & リッチデザイン)
    ========================================================================== */
 
-/* ヒーローセクション（ベストタイミング表示） */
+/* ヒーローセクション（おすすめ表示） */
 .best-timing-container {
     margin: 1rem 0 2rem 0;
     perspective: 1000px;
 }
 
 .best-timing-card {
-    background: linear-gradient(135deg, var(--primary-color), #3730a3);
+    background: linear-gradient(135deg, #4f46e5, #7c3aed, #ec4899);
+    background-size: 200% 200%;
+    animation: gradientMove 6s ease infinite, slideUp 0.6s cubic-bezier(0.22, 1, 0.36, 1);
     color: white;
-    padding: 1.5rem;
-    border-radius: var(--radius-md);
+    padding: 1.75rem;
+    border-radius: var(--radius-lg);
     position: relative;
     overflow: hidden;
-    box-shadow: var(--shadow-glow);
-    animation: slideUp 0.6s cubic-bezier(0.22, 1, 0.36, 1);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 15px 35px -5px rgba(79, 70, 229, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
-.best-timing-card::before {
+@keyframes gradientMove {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+.best-timing-card::after {
     content: "";
     position: absolute;
-    top: -50%;
-    left: -50%;
-    width: 200%;
-    height: 200%;
-    background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 60%);
-    animation: rotateBackground 10s linear infinite;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: url("data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='0.05' fill-rule='evenodd'%3E%3Ccircle cx='3' cy='3' r='3'/%3E%3C/g%3E%3C/svg%3E");
+    pointer-events: none;
 }
 
-@keyframes rotateBackground {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
-}
 
 .best-timing-badge {
-    display: inline-block;
-    background: rgba(255, 255, 255, 0.2);
-    backdrop-filter: blur(4px);
-    padding: 0.25rem 0.75rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: rgba(255, 255, 255, 0.9);
+    color: #4f46e5;
+    padding: 0.3rem 0.85rem;
     border-radius: var(--radius-full);
-    font-size: 0.75rem;
-    font-weight: 800;
+    font-size: 0.8rem;
+    font-weight: 900;
     margin-bottom: 1rem;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    border: 1px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    border: none;
 }
+
+.best-timing-badge::before {
+    content: "✨";
+}
+
 
 .best-timing-content {
     display: flex;
@@ -1167,4 +1201,251 @@ body {
     }
 }
 
+
+/* ==========================================================================
+   v4 カレンダーコンポーネント (Date Picker)
+   ========================================================================== */
+
+.calendar-container {
+    background-color: var(--bg-app);
+    border-radius: var(--radius-md);
+    padding: 1rem;
+    border: 1px solid var(--border-color);
+    margin-bottom: 1.5rem;
+}
+
+.calendar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.calendar-header h3 {
+    font-size: 1rem;
+    font-weight: 800;
+    color: var(--text-main);
+    font-family: var(--font-outfit);
+}
+
+.calendar-grid-header {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    text-align: center;
+    margin-bottom: 0.5rem;
+}
+
+.calendar-grid-header span {
+    font-size: 0.75rem;
+    font-weight: 800;
+    color: var(--text-muted);
+}
+
+.calendar-days-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 0.25rem;
+}
+
+.calendar-day {
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-sm);
+    font-size: 0.9rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: var(--transition-fast);
+    background: var(--bg-card);
+    border: 1px solid transparent;
+}
+
+.calendar-day:hover {
+    background-color: var(--primary-light);
+}
+
+.calendar-day.other-month {
+    opacity: 0.2;
+    cursor: default;
+}
+
+.calendar-day.today {
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+}
+
+.calendar-day.selected {
+    background-color: var(--primary-color);
+    color: white;
+    box-shadow: 0 4px 10px rgba(79, 70, 229, 0.3);
+}
+
+.selected-dates-display {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.selected-dates-display .label {
+    font-size: 0.85rem;
+    font-weight: 800;
+    color: var(--text-muted);
+}
+
+.selected-dates-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    min-height: 32px;
+}
+
+.date-badge {
+    background-color: var(--primary-light);
+    color: var(--primary-color);
+    padding: 0.25rem 0.75rem;
+    border-radius: var(--radius-full);
+    font-size: 0.8rem;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    animation: scaleUp 0.2s ease-out;
+}
+
+.no-selection {
+    font-size: 0.8rem;
+    color: var(--divider-color);
+    opacity: 0.6;
+    font-style: italic;
+}
+
+.btn-icon {
+    background: none;
+    border: none;
+    color: var(--text-main);
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 50%;
+    transition: var(--transition-fast);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-icon:hover {
+    background-color: var(--border-color);
+}
+
+/* 時限グリッドのカレンダー対応 */
+.timetable-grid.calendar-mode {
+    grid-template-columns: 80px repeat(var(--columns, 1), 1fr);
+}
+
+.no-selection-msg {
+    grid-column: 1 / -1;
+    padding: 2rem;
+    text-align: center;
+    color: var(--text-muted);
+    font-style: italic;
+    background: var(--bg-app);
+.btn-icon-text {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8rem;
+    padding: 0.5rem 0.75rem;
+}
+
+.section-flex-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+/* 設定パネル */
+.settings-panel {
+    background: var(--bg-app);
+    border: 1px solid var(--primary-color);
+    border-radius: var(--radius-md);
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+    animation: slideDown 0.3s ease-out;
+}
+
+.settings-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.settings-header h3 {
+    font-size: 0.9rem;
+    font-weight: 800;
+}
+
+.period-editor-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+    max-height: 300px;
+    overflow-y: auto;
+    padding-right: 0.5rem;
+}
+
+.period-editor-item {
+    display: grid;
+    grid-template-columns: 40px 1fr 40px;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.period-badge-static {
+    background: var(--primary-color);
+    color: white;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    font-size: 0.8rem;
+    font-weight: 800;
+}
+
+.period-input {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    padding: 0.5rem;
+    font-size: 0.85rem;
+    color: var(--text-main);
+}
+
+.settings-actions {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.5rem;
+}
+
+.btn-sm {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.75rem;
+}
+
+@keyframes slideDown {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 600px) {
+    .section-flex-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}
 

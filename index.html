@@ -43,9 +43,9 @@
         <header class="app-header">
             <div class="logo-container">
                 <span class="logo-icon">📅</span>
-                <h1 class="logo-text">コマ合わせ <span class="logo-beta">v3.0</span></h1>
+                <h1 class="logo-text">コマ合わせ <span class="logo-beta">v4.0</span></h1>
             </div>
-            <p class="tagline">LINEの面倒な予定調整を、タップだけで一瞬で解決！</p>
+            <p class="tagline">大学の友達と「空いてるコマ」を重ねるだけ！<br>URLを送るだけで一瞬で予定が合います。</p>
         </header>
 
         <!-- メインコンテンツ -->
@@ -60,9 +60,10 @@
             <section class="card setup-section" id="sec-profile">
                 <div class="card-header">
                     <span class="step-badge">Step 1</span>
-                    <h2>あなたの名前を教えて！</h2>
+                    <h2>あなたの表示名を入力</h2>
                 </div>
                 <div class="card-body">
+                    <p class="section-desc">まずは、誰の予定かわかるように名前（ニックネーム）を入力してね！</p>
                     <!-- 編集状態インジケーター -->
                     <div id="edit-indicator" class="edit-indicator hidden">
                         <span class="edit-indicator-text">
@@ -81,40 +82,85 @@
                 </div>
             </section>
 
-            <!-- ステップ2: 空き時間選択 -->
-            <section class="card grid-section" id="sec-select-grid">
+            <!-- ステップ2: 調整する日付を選択 -->
+            <section class="card calendar-section" id="sec-calendar">
                 <div class="card-header">
                     <span class="step-badge">Step 2</span>
-                    <h2>空いているコマをタップ！</h2>
+                    <h2>調整したい日を選ぶ</h2>
                 </div>
                 <div class="card-body">
-                    <p class="section-desc">授業が入っていない、または予定が空いていて遊べるコマを塗りつぶしてね！<br><span class="desktop-only">（ドラッグで連続選択できます）</span></p>
+                    <p class="section-desc">カレンダーから候補日をタップして選んでね！（複数選択OK / 最大10日まで）</p>
                     
-                    <!-- 土日表示トグルボタン -->
-                    <div class="toggle-container">
-                        <span class="toggle-label">土日も表示する</span>
-                        <button type="button" id="btn-toggle-weekend" class="toggle-switch" aria-label="土日表示切り替え">
-                            <span class="toggle-slider"></span>
+                    <div class="calendar-container">
+                        <div class="calendar-header">
+                            <button type="button" id="btn-prev-month" class="btn-icon">
+                                <i data-lucide="chevron-left"></i>
+                            </button>
+                            <h3 id="calendar-month-year">2026年 6月</h3>
+                            <button type="button" id="btn-next-month" class="btn-icon">
+                                <i data-lucide="chevron-right"></i>
+                            </button>
+                        </div>
+                        <div class="calendar-grid-header">
+                            <span>日</span><span>月</span><span>火</span><span>水</span><span>木</span><span>金</span><span>土</span>
+                        </div>
+                        <div id="calendar-days" class="calendar-days-grid">
+                            <!-- JSでカレンダーの日付を生成 -->
+                        </div>
+                    </div>
+
+                    <div id="selected-dates-display" class="selected-dates-display">
+                        <span class="label">選択中の日:</span>
+                        <div id="selected-dates-list" class="selected-dates-list">
+                            <span class="no-selection">カレンダーから選んでください</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ステップ3: 空き時間選択 -->
+            <section class="card grid-section" id="sec-select-grid">
+                <div class="card-header">
+                    <span class="step-badge">Step 3</span>
+                    <h2>空いているコマを選択</h2>
+                </div>
+                <div class="card-body">
+                    <div class="section-flex-header">
+                        <p class="section-desc">選んだ日のうち、授業がなくて「遊べる・会える」コマをタップしてね！</p>
+                        <button type="button" id="btn-open-settings" class="btn btn-icon-text btn-outline">
+                            <i data-lucide="settings"></i>
+                            <span>時限の設定を変更</span>
                         </button>
                     </div>
 
-                    <!-- スマホ用曜日タブ -->
-                    <div id="day-tabs" class="day-tabs-container">
-                        <!-- JSで動的に生成 -->
-                    </div>
-
-                    <!-- スマホ用左右スワイプヒント -->
-                    <div class="swipe-hint-container">
-                        <i data-lucide="grab" class="swipe-hint-icon" style="width: 14px; height: 14px;"></i>
-                        <span>左右スワイプで曜日を切り替え</span>
-                    </div>
-
-                    <!-- 時間割グリッドコンテナ -->
-                    <div class="timetable-wrapper">
-                        <div id="selection-grid" class="timetable-grid">
-                            <!-- JSで動的に時間割グリッドを生成します -->
+                    <!-- 時限設定パネル (デフォルト非表示) -->
+                    <div id="period-settings-panel" class="settings-panel hidden">
+                        <div class="settings-header">
+                            <h3>コマの種類と時間を設定</h3>
+                            <button type="button" id="btn-close-settings" class="btn-icon">
+                                <i data-lucide="x"></i>
+                            </button>
+                        </div>
+                        <div id="period-editor-list" class="period-editor-list">
+                            <!-- JSで時限編集行を生成 -->
+                        </div>
+                        <div class="settings-actions">
+                            <button type="button" id="btn-add-period" class="btn btn-sm btn-outline">
+                                <i data-lucide="plus"></i>
+                                <span>時限を追加</span>
+                            </button>
+                            <button type="button" id="btn-apply-periods" class="btn btn-sm btn-primary">設定を完了する</button>
                         </div>
                     </div>
+                    
+                    <!-- 時間割グリッドコンテナ -->
+
+                    <div class="timetable-wrapper">
+                        <div id="selection-grid" class="timetable-grid calendar-mode">
+                             <p class="no-selection-msg">先にカレンダーで日付を選んでください</p>
+                        </div>
+                    </div>
+
 
                     <!-- 操作ボタンエリア -->
                     <div class="action-buttons">
@@ -138,13 +184,14 @@
                 </div>
             </section>
 
-            <!-- ステップ3: 共通空き時間（結果表示） -->
+            <!-- ステップ4: 共通空き時間（結果表示） -->
             <section class="card results-section" id="sec-results">
                 <div class="card-header">
-                    <span class="step-badge">Step 3</span>
-                    <h2>みんなの共通の空き時間 🎯</h2>
+                    <span class="step-badge">Step 4</span>
+                    <h2>空き状況を確認・共有！ ✨</h2>
                 </div>
                 <div class="card-body">
+                    <p class="section-desc">下の「メンバーに追加」を押すと、あなたの予定が反映されます。全員分重なると「おすすめ」が自動で出ます！</p>
                     <!-- 登録メンバー一覧 -->
                     <div class="members-container">
                         <h3>参加メンバー (<span id="member-count">0</span>人)</h3>

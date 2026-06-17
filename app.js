@@ -7,32 +7,33 @@ document.addEventListener('DOMContentLoaded', () => {
     // ---------------------------------------------------------
     // 1. 定数とアプリケーション状態 (State)
     // ---------------------------------------------------------
-    const DAYS_WEEKDAY = ['月', '火', '水', '木', '金'];
-    const DAYS_WEEKEND = ['土', '日'];
-    
-    // 時限の定義 (一般的な大学のコマ割り)
-    const PERIODS = [
-        { num: 1, time: '9:00 - 10:30' },
-        { num: 2, time: '10:40 - 12:10' },
-        { num: 3, time: '13:00 - 14:30' },
-        { num: 4, time: '14:40 - 16:10' },
-        { num: 5, time: '16:20 - 17:50' },
-        { num: 6, time: '18:00 - 19:30' }
-    ];
-
     // アプリの状態
     const state = {
-        showWeekend: false,
         currentName: '',
-        currentSchedule: new Set(), // 自分で選択中のコマキー (例: "月-1", "水-3")
+        currentSchedule: new Set(), // 自分で選択中のコマキー (例: "20260617-1")
         members: [], // グループメンバーの配列 { id, name, schedule: [], colorIndex }
-        editingMemberId: null, // 現在編集中のメンバーID (nullなら新規追加モード)
-        selectedDayMobile: '月', // モバイル表示時に選択されている曜日
-        scoreBoard: {}, // 結果表示用一時スコアボード保持
+        editingMemberId: null, 
+        
+        // 時限の定義 (一般的な大学のコマ割り)
+        periods: [
+            { num: 1, time: '9:00 - 10:30' },
+            { num: 2, time: '10:40 - 12:10' },
+            { num: 3, time: '13:00 - 14:30' },
+            { num: 4, time: '14:40 - 16:10' },
+            { num: 5, time: '16:20 - 17:50' },
+            { num: 6, time: '18:00 - 19:30' }
+        ],
+
+        // カレンダー関連
+        selectedDates: [], // 選択された日付のリスト ["2026-06-17", ...]
+        calendarViewDate: new Date(), // 現在表示中のカレンダーの年月
+        
+        // 結果表示用一時スコアボード保持
+        scoreBoard: {}, 
         
         // ドラッグ/タッチ選択用の一時状態
         isDragging: false,
-        dragMode: true, // true: 選択モード, false: 解除モード
+        dragMode: true, 
         lastTouchedCell: null
     };
 
@@ -40,7 +41,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // 2. DOM要素の取得
     // ---------------------------------------------------------
     const inputName = document.getElementById('input-name');
-    const btnToggleWeekend = document.getElementById('btn-toggle-weekend');
     const selectionGrid = document.getElementById('selection-grid');
     const resultGrid = document.getElementById('result-grid');
     const btnAddMember = document.getElementById('btn-add-member');
@@ -52,11 +52,25 @@ document.addEventListener('DOMContentLoaded', () => {
     const toast = document.getElementById('toast');
     const toastMessage = document.getElementById('toast-message');
 
-    // v2新規DOM要素
+    // カレンダーDOM
+    const calendarMonthYear = document.getElementById('calendar-month-year');
+    const calendarDays = document.getElementById('calendar-days');
+    const btnPrevMonth = document.getElementById('btn-prev-month');
+    const btnNextMonth = document.getElementById('btn-next-month');
+    const selectedDatesList = document.getElementById('selected-dates-list');
+
+    // 設定パネルDOM
+    const btnOpenSettings = document.getElementById('btn-open-settings');
+    const btnCloseSettings = document.getElementById('btn-close-settings');
+    const periodSettingsPanel = document.getElementById('period-settings-panel');
+    const periodEditorList = document.getElementById('period-editor-list');
+    const btnAddPeriod = document.getElementById('btn-add-period');
+    const btnApplyPeriods = document.getElementById('btn-apply-periods');
+
+    // その他DOM
     const editIndicator = document.getElementById('edit-indicator');
     const editMemberName = document.getElementById('edit-member-name');
     const btnCancelEdit = document.getElementById('btn-cancel-edit');
-    const dayTabs = document.getElementById('day-tabs');
     const slotDetailPanel = document.getElementById('slot-detail-panel');
     const slotDetailTimeLabel = document.getElementById('slot-detail-time-label');
     const slotDetailMembers = document.getElementById('slot-detail-members');
@@ -64,8 +78,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const decisionBox = document.getElementById('decision-box');
     const decisionText = document.getElementById('decision-text');
     const btnCopyDecision = document.getElementById('btn-copy-decision');
-
-    // v3新規DOM要素
     const bestTimingContainer = document.getElementById('best-timing-container');
     const bestTimingSlides = document.getElementById('best-timing-slides');
     const bestTimingPrev = document.getElementById('best-timing-prev');
@@ -79,36 +91,17 @@ document.addEventListener('DOMContentLoaded', () => {
     // 3. 初期化処理
     // ---------------------------------------------------------
     function init() {
-        // テーマの初期設定
         initTheme();
-
-        // Lucideアイコンの初期化
-        if (typeof lucide !== 'undefined') {
-            lucide.createIcons();
-        }
+        if (typeof lucide !== 'undefined') lucide.createIcons();
         
-        // URLパラメータからのデータ復元
         loadDataFromUrl();
-
-        // スマホ用曜日タブの生成
-        renderDayTabs();
-
-        // 画面幅によるモバイルレイアウトの適用
-        checkMobileLayout();
-        window.addEventListener('resize', checkMobileLayout);
-
-        // 時間割グリッドの初期描画
+        renderCalendar();
         renderTimetables();
-        
-        // メンバーリストとヒートマップの更新
         updateResults();
-        
-        // イベントリスナーの登録
         setupEventListeners();
-
-        // スマホ用左右スワイプジェスチャーの初期化
-        setupSwipeGestures();
     }
+
+
 
     // テーマ（ライト/ダーク）の初期化
     function initTheme() {
@@ -127,107 +120,196 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ---------------------------------------------------------
-    // 4. モバイルレイアウト＆曜日タブ制御
+    // 4. カレンダー制御
     // ---------------------------------------------------------
-    function checkMobileLayout() {
-        const isMobile = window.innerWidth <= 600;
-        if (isMobile) {
-            selectionGrid.classList.add('mobile-single-day');
-            resultGrid.classList.add('mobile-single-day');
+    function renderCalendar() {
+        calendarDays.innerHTML = '';
+        const year = state.calendarViewDate.getFullYear();
+        const month = state.calendarViewDate.getMonth();
+
+        // ヘッダー更新 (2026年 6月)
+        calendarMonthYear.innerText = `${year}年 ${month + 1}月`;
+
+        // 月の最初の日と最後の日
+        const firstDay = new Date(year, month, 1);
+        const lastDay = new Date(year, month + 1, 0);
+        
+        // カレンダーの開始（前の月の残り）
+        const startDay = firstDay.getDay(); // 0:日, 1:月...
+        const prevMonthLastDay = new Date(year, month, 0).getDate();
+
+        // 前の月の日付
+        for (let i = startDay - 1; i >= 0; i--) {
+            const dayDiv = document.createElement('div');
+            dayDiv.className = 'calendar-day other-month';
+            dayDiv.innerText = prevMonthLastDay - i;
+            calendarDays.appendChild(dayDiv);
+        }
+
+        // 今月の日付
+        const today = new Date();
+        for (let d = 1; d <= lastDay.getDate(); d++) {
+            const dayDiv = document.createElement('div');
+            const dateStr = formatDate(year, month, d);
+            const isSelected = state.selectedDates.includes(dateStr);
+            const isToday = today.getFullYear() === year && today.getMonth() === month && today.getDate() === d;
+
+            dayDiv.className = `calendar-day ${isSelected ? 'selected' : ''} ${isToday ? 'today' : ''}`;
+            dayDiv.innerText = d;
+            
+            dayDiv.addEventListener('click', () => toggleDateSelection(dateStr));
+            calendarDays.appendChild(dayDiv);
+        }
+
+        renderSelectedDatesList();
+    }
+
+    function toggleDateSelection(dateStr) {
+        const index = state.selectedDates.indexOf(dateStr);
+        if (index > -1) {
+            state.selectedDates.splice(index, 1);
         } else {
-            selectionGrid.classList.remove('mobile-single-day');
-            resultGrid.classList.remove('mobile-single-day');
+            if (state.selectedDates.length >= 10) {
+                showToast('選択できるのは最大10日までです', 3000);
+                return;
+            }
+            state.selectedDates.push(dateStr);
+            state.selectedDates.sort(); // 日付順にソート
         }
-        updateGridMobileClasses();
+        renderCalendar();
+        renderTimetables();
+        updateResults();
     }
 
-    function renderDayTabs() {
-        dayTabs.innerHTML = '';
-        const days = getActiveDays();
-        
-        // 選択中の曜日が、土日トグル等で非活性になった場合のケア
-        if (!days.includes(state.selectedDayMobile)) {
-            state.selectedDayMobile = days[0];
+    function renderSelectedDatesList() {
+        selectedDatesList.innerHTML = '';
+        if (state.selectedDates.length === 0) {
+            selectedDatesList.innerHTML = '<span class="no-selection">カレンダーから選んでください</span>';
+            return;
         }
 
-        days.forEach(day => {
-            const tab = document.createElement('button');
-            tab.type = 'button';
-            tab.className = `day-tab ${day === state.selectedDayMobile ? 'active' : ''}`;
-            tab.innerText = day;
-            tab.addEventListener('click', () => {
-                state.selectedDayMobile = day;
-                
-                // タブのアクティブクラス更新
-                dayTabs.querySelectorAll('.day-tab').forEach(t => {
-                    t.classList.toggle('active', t.innerText === day);
-                });
-                
-                updateGridMobileClasses();
+        state.selectedDates.forEach(dateStr => {
+            const badge = document.createElement('span');
+            badge.className = 'date-badge';
+            const [y, m, d] = dateStr.split('-');
+            badge.innerText = `${parseInt(m)}/${parseInt(d)}`;
+            
+            const removeBtn = document.createElement('i');
+            removeBtn.setAttribute('data-lucide', 'x');
+            removeBtn.style.width = '12px';
+            removeBtn.style.height = '12px';
+            removeBtn.style.cursor = 'pointer';
+            removeBtn.style.marginLeft = '4px';
+            removeBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                toggleDateSelection(dateStr);
             });
-            dayTabs.appendChild(tab);
+            
+            badge.appendChild(removeBtn);
+            selectedDatesList.appendChild(badge);
         });
+        
+        if (typeof lucide !== 'undefined') lucide.createIcons();
     }
 
-    function updateGridMobileClasses() {
-        const activeDay = state.selectedDayMobile;
-        
-        const updateGrid = (grid) => {
-            const cells = grid.querySelectorAll('.grid-cell');
-            cells.forEach(cell => {
-                const key = cell.dataset.key || cell.dataset.resultKey;
-                if (cell.classList.contains('cell-header')) {
-                    if (cell.innerText === activeDay) {
-                        cell.classList.add('active-day');
-                    } else {
-                        cell.classList.remove('active-day');
-                    }
-                } else if (key) {
-                    if (key.startsWith(activeDay + '-')) {
-                        cell.classList.add('active-day');
-                    } else {
-                        cell.classList.remove('active-day');
-                    }
-                }
-            });
-        };
-        
-        updateGrid(selectionGrid);
-        updateGrid(resultGrid);
+    function formatDate(y, m, d) {
+        return `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
     }
+
+    function getDisplayDate(dateStr) {
+        if (!dateStr) return '';
+        const [y, m, d] = dateStr.split('-');
+        const date = new Date(y, parseInt(m)-1, d);
+        const dayOfWeek = ['日', '月', '火', '水', '木', '金', '土'][date.getDay()];
+        return `${parseInt(m)}/${parseInt(d)}(${dayOfWeek})`;
+    }
+
+    // ---------------------------------------------------------
+    // 5. 時限設定（カスタマイズ）制御
+    // ---------------------------------------------------------
+    function renderPeriodEditor() {
+        periodEditorList.innerHTML = '';
+        state.periods.forEach((period, index) => {
+            const item = document.createElement('div');
+            item.className = 'period-editor-item';
+            
+            const badge = document.createElement('div');
+            badge.className = 'period-badge-static';
+            badge.innerText = period.num;
+            
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.className = 'period-input';
+            input.value = period.time;
+            input.placeholder = '例: 9:00 - 10:30';
+            input.addEventListener('change', (e) => {
+                period.time = e.target.value.trim();
+            });
+            
+            const delBtn = document.createElement('button');
+            delBtn.type = 'button';
+            delBtn.className = 'btn-icon';
+            delBtn.innerHTML = '<i data-lucide="minus-circle"></i>';
+            delBtn.style.color = 'var(--text-danger)';
+            delBtn.addEventListener('click', () => {
+                if (state.periods.length <= 1) {
+                    showToast('これ以上削除できません', 3000);
+                    return;
+                }
+                state.periods.splice(index, 1);
+                // 番号を振り直す
+                state.periods.forEach((p, i) => p.num = i + 1);
+                renderPeriodEditor();
+            });
+            
+            item.appendChild(badge);
+            item.appendChild(input);
+            item.appendChild(delBtn);
+            periodEditorList.appendChild(item);
+        });
+        
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+    }
+
+    function handleApplyPeriods() {
+        renderTimetables();
+        updateResults();
+        periodSettingsPanel.classList.add('hidden');
+        showToast('✅ 時限設定を更新しました！', 3000);
+    }
+
 
     // ---------------------------------------------------------
     // 5. グリッドの描画 (Render Timetables)
     // ---------------------------------------------------------
-    function getActiveDays() {
-        return state.showWeekend ? [...DAYS_WEEKDAY, ...DAYS_WEEKEND] : DAYS_WEEKDAY;
-    }
-
     function renderTimetables() {
-        const days = getActiveDays();
-        const totalColumns = days.length;
+        const dates = state.selectedDates;
+        const totalColumns = dates.length;
         
         // CSS変数の更新 (Gridの列数を制御)
-        selectionGrid.style.setProperty('--columns', totalColumns);
-        resultGrid.style.setProperty('--columns', totalColumns);
+        selectionGrid.style.setProperty('--columns', totalColumns || 1);
+        resultGrid.style.setProperty('--columns', totalColumns || 1);
 
         // 1. 選択用時間割グリッドの生成
-        generateGridHtml(selectionGrid, true);
+        if (totalColumns > 0) {
+            generateGridHtml(selectionGrid, true);
+        } else {
+            selectionGrid.innerHTML = '<p class="no-selection-msg">先にカレンダーで日付を選んでください</p>';
+        }
         
         // 2. 結果ヒートマップ用時間割グリッドの生成
-        generateGridHtml(resultGrid, false);
-        
-        // モバイル用アクティブ曜日クラスの適用
-        updateGridMobileClasses();
+        if (totalColumns > 0) {
+            generateGridHtml(resultGrid, false);
+        } else {
+            resultGrid.innerHTML = '<p class="no-selection-msg">日付が選ばれるとここに結果が表示されます</p>';
+        }
 
         // Lucideアイコンの再適用
-        if (typeof lucide !== 'undefined') {
-            lucide.createIcons();
-        }
+        if (typeof lucide !== 'undefined') lucide.createIcons();
     }
 
     function generateGridHtml(gridElement, isSelectable) {
-        const days = getActiveDays();
+        const dates = state.selectedDates;
         gridElement.innerHTML = '';
 
         // 左上の空白の角セル
@@ -236,16 +318,16 @@ document.addEventListener('DOMContentLoaded', () => {
         cornerCell.innerText = '時間';
         gridElement.appendChild(cornerCell);
 
-        // 曜日ヘッダーの描画
-        days.forEach(day => {
+        // 日付ヘッダーの描画
+        dates.forEach(dateStr => {
             const headerCell = document.createElement('div');
             headerCell.className = 'grid-cell cell-header';
-            headerCell.innerText = day;
+            headerCell.innerText = getDisplayDate(dateStr);
             gridElement.appendChild(headerCell);
         });
 
         // 各時限の行を描画
-        PERIODS.forEach(period => {
+        state.periods.forEach(period => {
             // 時限ラベルセル
             const labelCell = document.createElement('div');
             labelCell.className = 'grid-cell cell-label';
@@ -263,9 +345,9 @@ document.addEventListener('DOMContentLoaded', () => {
             gridElement.appendChild(labelCell);
 
             // 各曜日の時間枠セル
-            days.forEach((day, dayIndex) => {
+            dates.forEach(dateStr => {
                 const cell = document.createElement('div');
-                const cellKey = `${day}-${period.num}`;
+                const cellKey = `${dateStr.replace(/-/g, '')}-${period.num}`;
                 
                 if (isSelectable) {
                     // 選択用グリッド
@@ -290,7 +372,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     cell.className = 'grid-cell cell-result';
                     cell.dataset.resultKey = cellKey;
                     
-                    // v2: ドットインジケーター用の構造に変更
                     const container = document.createElement('div');
                     container.className = 'cell-result-container';
                     
@@ -304,12 +385,15 @@ document.addEventListener('DOMContentLoaded', () => {
                     container.appendChild(dotContainer);
                     
                     cell.appendChild(container);
+                    
+                    cell.addEventListener('click', () => showSlotDetail(cellKey));
                 }
                 
                 gridElement.appendChild(cell);
             });
         });
     }
+
 
     // ---------------------------------------------------------
     // 6. ドラッグ/スワイプによるインタラクション
@@ -330,20 +414,19 @@ document.addEventListener('DOMContentLoaded', () => {
                     localStorage.setItem('koma-theme', 'dark');
                     themeToggleIcon.setAttribute('data-lucide', 'sun');
                 }
-                if (typeof lucide !== 'undefined') {
-                    lucide.createIcons();
-                }
-                updateResults(); // ヒートマップ等の表示カラー再計算
+                if (typeof lucide !== 'undefined') lucide.createIcons();
+                updateResults();
             });
         }
 
-        // 土日表示トグル
-        btnToggleWeekend.addEventListener('click', () => {
-            state.showWeekend = !state.showWeekend;
-            btnToggleWeekend.classList.toggle('active', state.showWeekend);
-            renderDayTabs(); // 曜日タブの再生成
-            renderTimetables();
-            updateResults(); // ヒートマップも再描画
+        // カレンダー月移動
+        btnPrevMonth.addEventListener('click', () => {
+            state.calendarViewDate.setMonth(state.calendarViewDate.getMonth() - 1);
+            renderCalendar();
+        });
+        btnNextMonth.addEventListener('click', () => {
+            state.calendarViewDate.setMonth(state.calendarViewDate.getMonth() + 1);
+            renderCalendar();
         });
 
         // 選択用グリッドのマウス/タッチイベント
@@ -384,7 +467,7 @@ document.addEventListener('DOMContentLoaded', () => {
             renderTimetables();
         });
 
-        // 名前入力欄の変更検知 (リアルタイムで状態に同期)
+        // 名前入力欄の変更検知
         inputName.addEventListener('input', (e) => {
             state.currentName = e.target.value.trim();
         });
@@ -396,7 +479,56 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // 決定テキストコピーボタン
         btnCopyDecision.addEventListener('click', handleCopyDecision);
+
+        // 時限設定
+        btnOpenSettings.addEventListener('click', () => {
+            renderPeriodEditor();
+            periodSettingsPanel.classList.toggle('hidden');
+        });
+        btnCloseSettings.addEventListener('click', () => {
+            periodSettingsPanel.classList.add('hidden');
+        });
+        btnAddPeriod.addEventListener('click', () => {
+            if (state.periods.length >= 12) {
+                showToast('追加できるのは12コマまでです', 3000);
+                return;
+            }
+            state.periods.push({ num: state.periods.length + 1, time: '' });
+            renderPeriodEditor();
+        });
+        btnApplyPeriods.addEventListener('click', handleApplyPeriods);
     }
+
+    function showSlotDetail(cellKey) {
+        if (!state.scoreBoard[cellKey]) return;
+        
+        const dateStrLong = cellKey.substring(0, 4) + '-' + cellKey.substring(4, 6) + '-' + cellKey.substring(6, 8);
+        const periodNum = cellKey.split('-')[1];
+        const period = state.periods.find(p => p.num == periodNum);
+        
+        if (!period) {
+            slotDetailPanel.classList.add('hidden');
+            return;
+        }
+        
+        slotDetailTimeLabel.innerText = `${getDisplayDate(dateStrLong)} ${periodNum}限 (${period.time})`;
+        slotDetailMembers.innerHTML = '';
+        
+        const freeMembers = state.scoreBoard[cellKey];
+        if (freeMembers.length > 0) {
+            freeMembers.forEach(m => {
+                const badge = document.createElement('span');
+                badge.className = `slot-detail-member m-bg-${m.colorIndex}`;
+                badge.innerText = `👤 ${m.name}`;
+                slotDetailMembers.appendChild(badge);
+            });
+        } else {
+            slotDetailMembers.innerHTML = '<p class="no-selection">空いている人はいません</p>';
+        }
+        
+        slotDetailPanel.classList.remove('hidden');
+    }
+
 
     function setupDragSelection() {
         // --- PC向けマウスドラッグイベント ---
@@ -708,17 +840,16 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // 2. 共通空き時間のヒートマップ計算と反映
-        const days = getActiveDays();
-        const scoreBoard = {}; // { '月-1': [{name, colorIndex}], ... }
+        const dates = state.selectedDates;
+        const scoreBoard = {}; 
         
-        // スコアボード初期化
-        days.forEach(day => {
-            PERIODS.forEach(period => {
-                scoreBoard[`${day}-${period.num}`] = [];
+        dates.forEach(dateStr => {
+            const dateKey = dateStr.replace(/-/g, '');
+            state.periods.forEach(period => {
+                scoreBoard[`${dateKey}-${period.num}`] = [];
             });
         });
 
-        // 各メンバーのスケジュールを集計
         state.members.forEach(member => {
             member.schedule.forEach(key => {
                 if (scoreBoard[key]) {
@@ -744,10 +875,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const ratioLabel = cell.querySelector('.result-ratio-label');
             const dotContainer = cell.querySelector('.dot-container');
             
-            // セルのリセット
+            // セルを初期状態にリセット
             cell.style.backgroundColor = '';
             cell.style.color = '';
-            cell.classList.remove('perfect-match');
+            cell.classList.remove('perfect-match', 'match-100', 'match-75', 'match-50', 'match-25', 'match-0');
             if (dotContainer) dotContainer.innerHTML = '';
             
             if (totalMembers === 0) {
@@ -756,22 +887,41 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            // 比率を計算
+            // 一致率を計算
             const ratio = freeCount / totalMembers;
             
             if (freeCount > 0) {
-                // 全員空いている (一致率100%) かつメンバーが2人以上の場合、特別ハイライト
-                if (freeCount === totalMembers && totalMembers >= 2) {
-                    cell.classList.add('perfect-match');
+                // v4: 一致率に応じたクラス付与
+                if (ratio === 1) {
+                    cell.classList.add('match-100');
+                    if (totalMembers >= 2) cell.classList.add('perfect-match');
+                } else if (ratio >= 0.75) {
+                    cell.classList.add('match-75');
+                } else if (ratio >= 0.5) {
+                    cell.classList.add('match-50');
                 } else {
-                    // 人数に応じたカラー濃淡
-                    const isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-                    if (isDark) {
-                        cell.style.backgroundColor = `rgba(16, 185, 129, ${0.15 + ratio * 0.75})`;
-                        cell.style.color = '#ffffff';
-                    } else {
-                        cell.style.backgroundColor = `rgba(16, 185, 129, ${0.1 + ratio * 0.8})`;
-                        cell.style.color = ratio > 0.5 ? '#ffffff' : 'var(--text-main)';
+                    cell.classList.add('match-25');
+                }
+                
+                ratioLabel.innerText = `${freeCount}/${totalMembers}`;
+                cell.setAttribute('data-tooltip', `${freeCount}人空き: ${freeMembers.map(m => m.name).join(', ')}`);
+                
+                // ドットの描画
+                freeMembers.forEach(m => {
+                    const dot = document.createElement('div');
+                    dot.className = `status-dot m-bg-${m.colorIndex}`;
+                    dotContainer.appendChild(dot);
+                });
+            } else {
+                cell.classList.add('match-0');
+                ratioLabel.innerText = '0';
+                cell.setAttribute('data-tooltip', '空いている人はいません');
+            }
+        });
+
+        // おすすめ（ベストタイミング）と候補一覧の生成
+        generateRecommendations(scoreBoard, totalMembers);
+    }
          function renderBestTimings(tieSlots, totalMembers) {
         bestTimingSlides.innerHTML = '';
         
@@ -786,7 +936,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const card = document.createElement('div');
             card.className = 'best-timing-card';
             
-            const badgeText = isMultiple ? `👑 ベストタイミング候補 (${index + 1}/${tieSlots.length})` : '👑 ベストタイミング';
+            const badgeText = isMultiple ? `おすすめ候補 (${index + 1}/${tieSlots.length})` : 'おすすめの時間帯 ✨';
             const badge = document.createElement('div');
             badge.className = 'best-timing-badge';
             badge.innerText = badgeText;
@@ -795,11 +945,15 @@ document.addEventListener('DOMContentLoaded', () => {
             const content = document.createElement('div');
             content.className = 'best-timing-content';
             
-            const timeObj = PERIODS.find(p => p.num === slot.period);
+            const periodNum = slot.period;
+            const timeObj = state.periods.find(p => p.num === periodNum);
             const timeStr = timeObj ? ` (${timeObj.time})` : '';
+            
+            const dateStrLong = slot.day.substring(0, 4) + '-' + slot.day.substring(4, 6) + '-' + slot.day.substring(6, 8);
+            
             const mainInfo = document.createElement('div');
             mainInfo.className = 'best-timing-main';
-            mainInfo.innerText = `${slot.day}曜 ${slot.period}限${timeStr}`;
+            mainInfo.innerText = `${getDisplayDate(dateStrLong)} ${periodNum}限${timeStr}`;
             content.appendChild(mainInfo);
             
             const subInfo = document.createElement('div');
@@ -988,12 +1142,12 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             
             const percent = Math.round((slot.count / totalMembers) * 100);
-            const timeObj = PERIODS.find(p => p.num === slot.period);
+            const timeObj = state.periods.find(p => p.num === slot.period);
             const timeRange = timeObj ? `(${timeObj.time})` : '';
             
             let textHtml = '';
             if (slot.count === totalMembers) {
-                textHtml = `<div><strong>👑 【超おすすめ】${slot.day}曜${slot.period}限</strong> ${timeRange} - <strong>全員空いてます！✨</strong></div>`;
+                textHtml = `<div><strong>✨ 【おすすめ】${slot.day}曜${slot.period}限</strong> ${timeRange} - <strong>全員空いてます！</strong></div>`;
             } else {
                 textHtml = `<div><strong>💡 【候補】${slot.day}曜${slot.period}限</strong> ${timeRange} - <strong>${totalMembers}人中 ${slot.count}人 空き</strong> (${percent}%)</div>`;
             }
@@ -1032,71 +1186,42 @@ document.addEventListener('DOMContentLoaded', () => {
         if (typeof lucide !== 'undefined') {
             lucide.createIcons();
         }
+    }
 
+    function getBestTimings(scoreBoard, totalMembers) {
+        if (totalMembers < 2) return [];
 
-    function flashSlot(cellKey) {
-        const cell = resultGrid.querySelector(`[data-result-key="${cellKey}"]`);
-        if (!cell) return;
+        let maxCount = 0;
+        let bestSlots = [];
 
-        cell.classList.remove('flash-active');
-        cell.offsetWidth; // リフロー
-        cell.classList.add('flash-active');
+        for (const key in scoreBoard) {
+            const count = scoreBoard[key].length;
+            if (count > 0) {
+                const parts = key.split('-');
+                const day = parts[0];
+                const period = parseInt(parts[1]);
 
-        // モバイルで該当曜日が非表示の場合は切り替える
-        const day = cellKey.split('-')[0];
-        const isMobile = window.innerWidth <= 600;
-        if (isMobile && state.selectedDayMobile !== day) {
-            state.selectedDayMobile = day;
-            renderDayTabs();
-            updateGridMobileClasses();
+                if (count > maxCount) {
+                    maxCount = count;
+                    bestSlots = [{ day, period, count, members: scoreBoard[key] }];
+                } else if (count === maxCount) {
+                    bestSlots.push({ day, period, count, members: scoreBoard[key] });
+                }
+            }
         }
+        
+        // 日付順にソート（YYYYMMDDなので単純比較可）
+        bestSlots.sort((a, b) => {
+            if (a.day !== b.day) return a.day.localeCompare(b.day);
+            return a.period - b.period;
+        });
 
-        cell.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-
-        setTimeout(() => {
-            cell.classList.remove('flash-active');
-        }, 2000);
+        return bestSlots;
     }
 
-    function decideSlot(slot) {
-        const timeObj = PERIODS.find(p => p.num === slot.period);
-        const timeStr = timeObj ? ` ${timeObj.time}` : '';
-        
-        const text = `【コマ合わせ】調整結果決定！📅\n` +
-            `-------------------------\n` +
-            `■ 日程: ${slot.day}曜 ${slot.period}限 (${timeStr})\n` +
-            `■ 参加可能メンバー: ${slot.names.join(', ')}\n` +
-            `-------------------------\n` +
-            `みんなで予定を合わせましょう！よろしくお願いします。`;
-        
-        decisionText.value = text;
-        decisionBox.classList.remove('hidden');
-        decisionBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        
-        startConfetti();
-        showToast('🎉 日程を決定しました！LINEに送信するためのテキストが生成されました。', 4000);
-    }
-
-    function handleCopyDecision() {
-        if (!decisionText.value) return;
-        
-        navigator.clipboard.writeText(decisionText.value)
-            .then(() => {
-                showToast('📋 コピーしました！LINE等にそのまま貼り付けて送ってね。', 4000);
-            })
-            .catch(err => {
-                console.error('コピー失敗:', err);
-                decisionText.select();
-                showToast('コピーに失敗しました。手動でコピーしてください。', 4000);
-            });
-    }
-
-    // ---------------------------------------------------------
-    // 8. URLエンコード / デコードによるデータ共有 (P2P的サーバーレス)
-    // ---------------------------------------------------------
     function handleShareUrl() {
         if (state.members.length === 0 && state.currentSchedule.size === 0) {
-            showToast('まずは名前と空き時間を入力して、メンバーに追加するか、入力を行ってください！', 4000);
+            showToast('まずは名前と空き時間を入力して、メンバーに追加するか、入力を行ってください！', 3000);
             return;
         }
 
@@ -1107,70 +1232,95 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         try {
-            const exportData = {
-                w: state.showWeekend ? 1 : 0,
-                m: state.members.map(member => ({
-                    n: member.name,
-                    s: member.schedule
-                }))
-            };
-
-            const jsonString = JSON.stringify(exportData);
-            const encodedData = btoa(encodeURIComponent(jsonString).replace(/%([0-9A-F]{2})/g, (match, p1) => {
-                return String.fromCharCode(parseInt(p1, 16));
-            }));
-
+            const data = exportData();
             const url = new URL(window.location.href);
-            url.searchParams.set('d', encodedData);
+            url.searchParams.set('d', data);
             
-            navigator.clipboard.writeText(url.toString())
-                .then(() => {
-                    showToast('🎉 LINE用の共有URLをクリップボードにコピーしました！友達に送ってね。', 5000);
-                })
-                .catch(err => {
-                    console.error('URLコピーに失敗:', err);
-                    prompt('コピーに失敗したため、以下のURLを手動でコピーしてください：', url.toString());
-                });
-                
+            navigator.clipboard.writeText(url.toString()).then(() => {
+                showToast('✅ 共有URLをコピーしました！LINEに貼り付けて送ってね。', 4000);
+            }).catch(err => {
+                console.error('Failed to copy: ', err);
+                prompt('共有URLをコピーして友達に送ってください:', url.toString());
+            });
         } catch (error) {
-            console.error('データエンコードエラー:', error);
+            console.error('Export error:', error);
             showToast('共有URLの作成に失敗しました。', 3000);
         }
     }
 
+    function exportData() {
+        const data = {
+            m: state.members.map(m => ({
+                n: m.name,
+                s: m.schedule,
+                c: m.colorIndex
+            })),
+            d: state.selectedDates,
+            p: state.periods
+        };
+        const json = JSON.stringify(data);
+        return btoa(encodeURIComponent(json).replace(/%([0-9A-F]{2})/g, (match, p1) => {
+            return String.fromCharCode(parseInt(p1, 16));
+        }));
+    }
+
     function loadDataFromUrl() {
-        const urlParams = new URLSearchParams(window.location.search);
-        const encodedData = urlParams.get('d');
-        
-        if (!encodedData) return;
-
-        try {
-            const jsonString = decodeURIComponent(Array.prototype.map.call(atob(encodedData), (c) => {
-                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-            }).join(''));
-
-            const importedData = JSON.parse(jsonString);
-
-            if (importedData.w !== undefined) {
-                state.showWeekend = importedData.w === 1;
-                btnToggleWeekend.classList.toggle('active', state.showWeekend);
+        const params = new URLSearchParams(window.location.search);
+        const encodedData = params.get('d');
+        if (encodedData) {
+            try {
+                const json = decodeURIComponent(Array.prototype.map.call(atob(encodedData), (c) => {
+                    return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+                }).join(''));
+                const data = JSON.parse(json);
+                if (data && data.m) {
+                    state.members = data.m.map((m, index) => ({
+                        id: 'mem_' + Date.now() + '_' + index + '_' + Math.random().toString(36).substr(2, 3),
+                        name: m.n,
+                        schedule: m.s,
+                        colorIndex: m.c !== undefined ? m.c : (index % 10)
+                    }));
+                }
+                if (data && data.d) {
+                    state.selectedDates = data.d;
+                    state.selectedDates.sort();
+                }
+                if (data && data.p) {
+                    state.periods = data.p;
+                }
+            } catch (e) {
+                console.error('Failed to load data from URL', e);
             }
-
-            if (importedData.m && Array.isArray(importedData.m)) {
-                state.members = importedData.m.map((importedMember, index) => ({
-                    id: 'mem_' + Date.now() + '_' + index + '_' + Math.random().toString(36).substr(2, 3),
-                    name: importedMember.n,
-                    schedule: importedMember.s,
-                    colorIndex: index % 10 // 復元時にも自動で色を順次割り当て
-                }));
-
-                const memberNames = state.members.map(m => m.name).join('さん、');
-                showToast(`📥 ${state.members.length}人の空き時間データを読み込みました！ (${memberNames}さん)`, 5000);
-            }
-        } catch (error) {
-            console.error('データデコードエラー:', error);
-            showToast('⚠️ 共有データの読み込みに失敗しました。URLが壊れている可能性があります。', 4000);
         }
+    }
+
+    function handleCopyDecision() {
+        const message = decisionText.value;
+        if (!message) return;
+        
+        navigator.clipboard.writeText(message).then(() => {
+            showToast('✅ 送信用テキストをコピーしました！', 3000);
+        });
+    }
+
+    function decideSlot(slot) {
+        const timeObj = state.periods.find(p => p.num === slot.period);
+        const timeStr = timeObj ? ` ${timeObj.time}` : '';
+        const dateStrLong = slot.day.substring(0, 4) + '-' + slot.day.substring(4, 6) + '-' + slot.day.substring(6, 8);
+        
+        const text = `【コマ合わせ】調整結果決定！📅\n` +
+            `-------------------------\n` +
+            `■ 日程: ${getDisplayDate(dateStrLong)} ${slot.period}限 (${timeStr})\n` +
+            `■ 参加可能メンバー: ${slot.members.map(m => m.name).join(', ')}\n` +
+            `-------------------------\n` +
+            `みんなで予定を合わせましょう！よろしくお願いします。`;
+        
+        decisionText.value = text;
+        decisionBox.classList.remove('hidden');
+        decisionBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        
+        startConfetti();
+        showToast('🎉 日程を決定しました！LINE送信用テキストも生成されました。', 4000);
     }
 
     // ---------------------------------------------------------
@@ -1278,6 +1428,20 @@ document.addEventListener('DOMContentLoaded', () => {
         
         draw();
     }
+    function flashSlot(cellKey) {
+        const cell = resultGrid.querySelector(`[data-result-key="${cellKey}"]`);
+        if (!cell) return;
+
+        cell.classList.remove('flash-active');
+        cell.offsetWidth; // リフロー
+        cell.classList.add('flash-active');
+
+        cell.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+        setTimeout(() => {
+            cell.classList.remove('flash-active');
+        }, 2000);
+    }
 
     // LINEへ直接送信する処理
     function handleLineDirectShare() {
@@ -1293,19 +1457,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         try {
-            const exportData = {
-                w: state.showWeekend ? 1 : 0,
-                m: state.members.map(member => ({
-                    n: member.name,
-                    s: member.schedule
-                }))
-            };
-
-            const jsonString = JSON.stringify(exportData);
-            const encodedData = btoa(encodeURIComponent(jsonString).replace(/%([0-9A-F]{2})/g, (match, p1) => {
-                return String.fromCharCode(parseInt(p1, 16));
-            }));
-
+            const encodedData = exportData();
             const url = new URL(window.location.href);
             url.searchParams.set('d', encodedData);
             
@@ -1324,60 +1476,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // スマホ用左右フリックによる曜日切り替えジェスチャー
-    function setupSwipeGestures() {
-        let startX = 0;
-        let endX = 0;
-        
-        const handleTouchStart = (e) => {
-            if (state.isDragging) return;
-            startX = e.touches[0].clientX;
-        };
-        
-        const handleTouchEnd = (e) => {
-            if (state.isDragging) return;
-            
-            endX = e.changedTouches[0].clientX;
-            const diffX = startX - endX;
-            
-            const days = getActiveDays();
-            if (days.length <= 1) return;
-            
-            const currentIdx = days.indexOf(state.selectedDayMobile);
-            if (currentIdx === -1) return;
-            
-            // 80px以上のスライドで曜日切り替え
-            if (diffX > 80) {
-                // 左スワイプ -> 次の曜日
-                const nextIdx = (currentIdx + 1) % days.length;
-                state.selectedDayMobile = days[nextIdx];
-                triggerDayChange();
-            } else if (diffX < -80) {
-                // 右スワイプ -> 前の曜日
-                const prevIdx = (currentIdx - 1 + days.length) % days.length;
-                state.selectedDayMobile = days[prevIdx];
-                triggerDayChange();
-            }
-        };
-        
-        function triggerDayChange() {
-            renderDayTabs();
-            updateGridMobileClasses();
-        }
-        
-        // 選択グリッドと結果グリッドのラッパーコンテナを監視
-        const selectionWrapper = selectionGrid.closest('.timetable-wrapper');
-        const resultWrapper = resultGrid.closest('.timetable-wrapper');
-        
-        if (selectionWrapper) {
-            selectionWrapper.addEventListener('touchstart', handleTouchStart, { passive: true });
-            selectionWrapper.addEventListener('touchend', handleTouchEnd, { passive: true });
-        }
-        if (resultWrapper) {
-            resultWrapper.addEventListener('touchstart', handleTouchStart, { passive: true });
-            resultWrapper.addEventListener('touchend', handleTouchEnd, { passive: true });
-        }
-    }
+    // (カレンダーモードではスワイプ曜日切り替えは不要のため削除)
 
     // アプリの起動
     init();

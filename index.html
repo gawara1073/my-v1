@@ -6,8 +6,8 @@
     <title>コマ合わせ 📅 | 大学生向け空き時間チェッカー</title>
     
     <!-- SEOメタデータ -->
-    <meta name="description" content="大学の友達と空いている授業コマ（時限）をタップして共有するだけで、全員の空き時間が一目でわかる！LINEの予定調整を圧倒的に簡単にする無料のスケジュール調整ツール。">
-    <meta name="keywords" content="コマ合わせ, 空き時間チェッカー, 大学生, 時間割, 予定調整, スケジュール調整, LINE, サーバー不要, 無料">
+    <meta name="description" content="大学の友達と空いている授業コマ（時限）を共有して全員の空き時間を可視化！v5では初回ガイドや時間割テンプレートを追加。LINEの予定調整を圧倒的に簡単にする無料のスケジュール調整ツール。">
+    <meta name="keywords" content="コマ合わせ, 空き時間チェッカー, 大学生, 時間割, 予定調整, スケジュール調整, LINE, v5, テンプレート">
     <meta name="author" content="コマ合わせ開発チーム">
     
     <!-- OGP (Open Graph Protocol) -->
@@ -43,9 +43,14 @@
         <header class="app-header">
             <div class="logo-container">
                 <span class="logo-icon">📅</span>
-                <h1 class="logo-text">コマ合わせ <span class="logo-beta">v4.0</span></h1>
+                <h1 class="logo-text">コマ合わせ <span class="logo-beta">v5.0</span></h1>
             </div>
             <p class="tagline">大学の友達と「空いてるコマ」を重ねるだけ！<br>URLを送るだけで一瞬で予定が合います。</p>
+            <div class="header-actions">
+                <button type="button" id="btn-open-guide" class="btn-help" aria-label="使い方ガイドを表示">
+                    <i data-lucide="help-circle"></i> 使い方 <span class="badge-new">NEW</span>
+                </button>
+            </div>
         </header>
 
         <!-- メインコンテンツ -->
@@ -136,7 +141,21 @@
                     <!-- 時限設定パネル (デフォルト非表示) -->
                     <div id="period-settings-panel" class="settings-panel hidden">
                         <div class="settings-header">
-                            <h3>コマの種類と時間を設定</h3>
+                        <div class="template-selector-container">
+                            <label class="template-label">✨ テンプレートから選ぶ (パッと設定)</label>
+                            <div class="template-grid">
+                                <button type="button" class="btn-template" data-template="standard">
+                                    <span class="template-icon">🎓</span> 90分×6コマ
+                                </button>
+                                <button type="button" class="btn-template" data-template="short">
+                                    <span class="template-icon">⚡</span> 60分×8コマ
+                                </button>
+                                <button type="button" class="btn-template" data-template="afterschool">
+                                    <span class="template-icon">🌙</span> 放課後のみ
+                                </button>
+                            </div>
+                        </div>
+                        <h3>コマの種類と時間を設定</h3>
                             <button type="button" id="btn-close-settings" class="btn-icon">
                                 <i data-lucide="x"></i>
                             </button>
@@ -191,7 +210,7 @@
                     <h2>空き状況を確認・共有！ ✨</h2>
                 </div>
                 <div class="card-body">
-                    <p class="section-desc">下の「メンバーに追加」を押すと、あなたの予定が反映されます。全員分重なると「おすすめ」が自動で出ます！</p>
+                    <p class="section-desc">「メンバーに追加」を押すと、あなたの予定がみんなの予定と重なります。✨ <br>全員分が揃うと、AIが最適な時間を自動で提案（ベストタイミング表示）します！</p>
                     <!-- 登録メンバー一覧 -->
                     <div class="members-container">
                         <h3>参加メンバー (<span id="member-count">0</span>人)</h3>
@@ -276,9 +295,31 @@
 
         <!-- フッター -->
         <footer class="app-footer">
-            <p>&copy; 2026 コマ合わせ | 大学生のための予定調整プロトタイプ</p>
-            <p class="footer-sub">サーバー不要・個人情報送信なしの安心設計。GitHub Pagesで公開可能。</p>
+            <p>&copy; 2026 コマ合わせ v5.0 | 大学生のための予定調整ツール</p>
+            <p class="footer-sub">サーバー不要・個人情報送信なしの安心・高速設計。LINEでの調整をスマートに。</p>
         </footer>
+    </div>
+
+    <!-- 初回利用ガイド（オンボーディング）モーダル -->
+    <div id="guide-modal" class="modal-overlay hidden">
+        <div class="guide-card">
+            <div class="guide-header">
+                <div class="guide-progress">
+                    <div id="guide-progress-bar" class="progress-bar" style="width: 25%;"></div>
+                </div>
+                <button type="button" id="btn-close-guide" class="btn-icon">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <div id="guide-content" class="guide-content">
+                <!-- JSでコンテンツを動的に切り替え -->
+            </div>
+            <div class="guide-footer">
+                <button type="button" id="btn-guide-prev" class="btn btn-outline hidden">戻る</button>
+                <button type="button" id="btn-guide-next" class="btn btn-primary">次へ</button>
+                <button type="button" id="btn-guide-finish" class="btn btn-success hidden">はじめる！</button>
+            </div>
+        </div>
     </div>
 
     <!-- メインJavaScript -->

@@ -1,6 +1,6 @@
 /**
  * コマ合わせ (Koma-Awase) - アプリケーションロジック
- * v3.0.0 (アップグレード版)
+ * v5.0.0 (アップグレード版)
  */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -34,7 +34,81 @@ document.addEventListener('DOMContentLoaded', () => {
         // ドラッグ/タッチ選択用の一時状態
         isDragging: false,
         dragMode: true, 
-        lastTouchedCell: null
+        lastTouchedCell: null,
+        
+        // v5追加: オンボーディング状態
+        guideStep: 0,
+        guideSteps: [
+            {
+                title: "ようこそ！コマ合わせ v5へ",
+                content: "「コマ合わせ」は、大学の友達と空き時間を一瞬で合わせるためのツールです。サーバー不要で個人情報も安心！",
+                icon: "✨"
+            },
+            {
+                title: "1. 自分の名前を入力",
+                content: "まずはニックネームを入力しましょう。誰の予定かわかるようにしてね！",
+                icon: "👤",
+                target: "sec-profile"
+            },
+            {
+                title: "2. 日付をタップ！",
+                content: "カレンダーから遊びたい日や調整したい日を選びます。最大10日まで選べるよ！",
+                icon: "📅",
+                target: "sec-calendar"
+            },
+            {
+                title: "3. 空き時間をなぞる",
+                content: "授業がない時間をタップやスワイプで選択してね。スワイプで一気に選ぶこともできます！",
+                icon: "🖱️",
+                target: "sec-select-grid"
+            },
+            {
+                title: "NEW! テンプレート機能",
+                content: "「時限の設定を変更」からテンプレートを選べば、90分授業などの時間を一瞬でセットできます！",
+                icon: "⚡",
+                target: "btn-open-settings"
+            },
+            {
+                title: "4. メンバーに追加 & 共有",
+                content: "「メンバーに追加」を押すとあなたの予定が保存されます。URLをコピーしてLINEで友達に送ろう！",
+                icon: "🔗",
+                target: "btn-add-member"
+            },
+            {
+                title: "5. おすすめを自動計算",
+                content: "友達が追加されると、全員が空いている「おすすめの時間」をAIが自動提案（ベストタイミング表示）！",
+                icon: "👑",
+                target: "sec-results"
+            }
+        ]
+    };
+
+    // v5追加: テンプレートデータ
+    const templates = {
+        standard: [
+            { num: 1, time: '9:20 - 10:50' },
+            { num: 2, time: '11:00 - 12:30' },
+            { num: 3, time: '13:20 - 14:50' },
+            { num: 4, time: '15:00 - 16:30' },
+            { num: 5, time: '16:40 - 18:10' },
+            { num: 6, time: '18:20 - 19:50' }
+        ],
+        short: [
+            { num: 1, time: '9:00 - 10:00' },
+            { num: 2, time: '10:10 - 11:10' },
+            { num: 3, time: '11:20 - 12:20' },
+            { num: 4, time: '13:10 - 14:10' },
+            { num: 5, time: '14:20 - 15:20' },
+            { num: 6, time: '15:30 - 16:30' },
+            { num: 7, time: '16:40 - 17:40' },
+            { num: 8, time: '17:50 - 18:50' }
+        ],
+        afterschool: [
+            { num: 1, time: '17:00 - 18:00' },
+            { num: 2, time: '18:00 - 19:00' },
+            { num: 3, time: '19:00 - 20:00' },
+            { num: 4, time: '20:00 - 21:00' }
+        ]
     };
 
     // ---------------------------------------------------------
@@ -86,6 +160,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnLineDirect = document.getElementById('btn-line-direct');
     const btnThemeToggle = document.getElementById('btn-theme-toggle');
     const themeToggleIcon = document.getElementById('theme-toggle-icon');
+    const btnOpenGuide = document.getElementById('btn-open-guide');
+    const guideModal = document.getElementById('guide-modal');
+    const guideContent = document.getElementById('guide-content');
+    const btnCloseGuide = document.getElementById('btn-close-guide');
+    const btnGuidePrev = document.getElementById('btn-guide-prev');
+    const btnGuideNext = document.getElementById('btn-guide-next');
+    const btnGuideFinish = document.getElementById('btn-guide-finish');
+    const guideProgressBar = document.getElementById('guide-progress-bar');
+
 
     // ---------------------------------------------------------
     // 3. 初期化処理
@@ -99,6 +182,14 @@ document.addEventListener('DOMContentLoaded', () => {
         renderTimetables();
         updateResults();
         setupEventListeners();
+
+        // v5追加: 初回起動時のガイド表示
+        const hasVisited = localStorage.getItem('koma-visited-v5');
+        const urlParams = new URLSearchParams(window.location.search);
+        // URL共有で来た場合はガイドを強制しない
+        if (!hasVisited && !urlParams.has('d')) {
+            openGuide();
+        }
     }
 
 
@@ -497,6 +588,87 @@ document.addEventListener('DOMContentLoaded', () => {
             renderPeriodEditor();
         });
         btnApplyPeriods.addEventListener('click', handleApplyPeriods);
+
+        // v5追加: ガイド操作
+        btnOpenGuide.addEventListener('click', openGuide);
+        btnCloseGuide.addEventListener('click', closeGuide);
+        btnGuidePrev.addEventListener('click', () => navigateGuide(-1));
+        btnGuideNext.addEventListener('click', () => navigateGuide(1));
+        btnGuideFinish.addEventListener('click', closeGuide);
+
+        // v5追加: テンプレート適用
+        document.querySelectorAll('.btn-template').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const templateKey = btn.dataset.template;
+                if (templates[templateKey]) {
+                    if (confirm('時限設定をテンプレートの内容で上書きしますか？')) {
+                        state.periods = JSON.parse(JSON.stringify(templates[templateKey]));
+                        renderPeriodEditor();
+                        handleApplyPeriods();
+                        showToast(`✅ ${btn.innerText.trim()} を適用しました！`, 3000);
+                    }
+                }
+            });
+        });
+    }
+
+    // ---------------------------------------------------------
+    // v5 オンボーディングガイド制御
+    // ---------------------------------------------------------
+    function openGuide() {
+        state.guideStep = 0;
+        updateGuideUI();
+        guideModal.classList.remove('hidden');
+    }
+
+    function closeGuide() {
+        guideModal.classList.add('hidden');
+        localStorage.setItem('koma-visited-v5', 'true');
+    }
+
+    function navigateGuide(delta) {
+        state.guideStep += delta;
+        if (state.guideStep < 0) state.guideStep = 0;
+        if (state.guideStep >= state.guideSteps.length) {
+            closeGuide();
+            return;
+        }
+        updateGuideUI();
+    }
+
+    function updateGuideUI() {
+        const step = state.guideSteps[state.guideStep];
+        const progress = ((state.guideStep + 1) / state.guideSteps.length) * 100;
+        
+        guideProgressBar.style.width = `${progress}%`;
+        
+        guideContent.innerHTML = `
+            <div class="guide-step-icon">${step.icon}</div>
+            <h2>${step.title}</h2>
+            <p>${step.content}</p>
+        `;
+
+        // ターゲットセクションのハイライト（視覚的なガイド）
+        document.querySelectorAll('.guide-highlight').forEach(el => el.classList.remove('guide-highlight'));
+        if (step.target) {
+            const targetEl = document.getElementById(step.target);
+            if (targetEl) {
+                targetEl.classList.add('guide-highlight');
+                // モーダルが重ならないようにターゲットへ緩やかにスクロール
+                targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }
+
+        // ボタンの表示切り替え
+        btnGuidePrev.classList.toggle('hidden', state.guideStep === 0);
+        
+        if (state.guideStep === state.guideSteps.length - 1) {
+            btnGuideNext.classList.add('hidden');
+            btnGuideFinish.classList.remove('hidden');
+        } else {
+            btnGuideNext.classList.remove('hidden');
+            btnGuideFinish.classList.add('hidden');
+        }
     }
 
     function showSlotDetail(cellKey) {

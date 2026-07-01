@@ -43,9 +43,27 @@
         <header class="app-header">
             <div class="logo-container">
                 <span class="logo-icon">📅</span>
-                <h1 class="logo-text">コマ合わせ <span class="logo-beta">v5.0</span></h1>
+                <h1 class="logo-text">コマ合わせ <span class="logo-beta">v6.0</span></h1>
             </div>
-            <p class="tagline">大学の友達と「空いてるコマ」を重ねるだけ！<br>URLを送るだけで一瞬で予定が合います。</p>
+            <p class="tagline">大学の友達と「空いてるコマ」を重ねるだけ！<br>予定調整を、もっとスマートに、もっと速く。</p>
+            
+            <!-- v6: クイックガイドバナー -->
+            <div class="quick-guide-banner">
+                <div class="guide-steps-inline">
+                    <div class="guide-step-item">
+                        <div class="guide-step-icon-sm">📅</div>
+                        <div class="guide-step-text">1. 日付を選ぶ</div>
+                    </div>
+                    <div class="guide-step-item">
+                        <div class="guide-step-icon-sm">🖱️</div>
+                        <div class="guide-step-text">2. 空き時間をなぞる</div>
+                    </div>
+                    <div class="guide-step-item">
+                        <div class="guide-step-icon-sm">🔗</div>
+                        <div class="guide-step-text">3. URLを友達に送る</div>
+                    </div>
+                </div>
+            </div>
             <div class="header-actions">
                 <button type="button" id="btn-open-guide" class="btn-help" aria-label="使い方ガイドを表示">
                     <i data-lucide="help-circle"></i> 使い方 <span class="badge-new">NEW</span>
@@ -183,9 +201,9 @@
 
                     <!-- 操作ボタンエリア -->
                     <div class="action-buttons">
-                        <button type="button" id="btn-add-member" class="btn btn-primary">
-                            <i data-lucide="user-plus"></i>
-                            <span>メンバーに追加する</span>
+                        <button type="button" id="btn-add-member" class="btn btn-primary btn-large">
+                            <i data-lucide="check-circle"></i>
+                            <span>予定を確定して保存</span>
                         </button>
                         <button type="button" id="btn-line-direct" class="btn btn-line">
                             <i data-lucide="message-square"></i>
@@ -216,7 +234,15 @@
                         <h3>参加メンバー (<span id="member-count">0</span>人)</h3>
                         <div id="member-tags" class="member-tags-list">
                             <!-- JSで動的に登録メンバーをタグとして生成します -->
-                            <p class="no-members-msg">メンバーがまだ登録されていません。上のボタンから追加してね！</p>
+                            <p class="no-members-msg">メンバーがまだ登録されていません。</p>
+                        </div>
+                        
+                        <!-- v6: デモ用ボタン -->
+                        <div class="btn-demo-container">
+                            <button type="button" id="btn-add-demo" class="btn-demo">
+                                <i data-lucide="sparkles"></i>
+                                <span>サンプルメンバーを3人追加して試す</span>
+                            </button>
                         </div>
                     </div>
 
@@ -272,17 +298,17 @@
                     <hr class="divider">
 
                     <!-- おすすめ時間帯のテキスト表示 -->
-                    <div class="recommendations-box">
-                        <h3>💡 全ての候補一覧</h3>
+                    <div class="recommendations-box featured">
+                        <h3>💡 全ての候補一覧 (おすすめ順)</h3>
                         <ul id="recommendation-list" class="recommendation-list">
                             <li>メンバーが登録されると、全員が空いている時間帯を自動で計算してここに提案します！</li>
                         </ul>
                     </div>
 
                     <!-- 予定決定＆コピーエリア -->
-                    <div id="decision-box" class="decision-box hidden">
+                    <div id="decision-box" class="decision-box featured hidden">
                         <h3>📅 日程の決定・コピー</h3>
-                        <p class="section-desc">おすすめ日程から「決定」を押すと、LINEに送信できる決定文章がここに生成されます。</p>
+                        <p class="section-desc">おすすめ日程から「日程を決定する」を押すと、LINEに送信できる文章が自動生成されます。</p>
                         <textarea id="decision-text" class="decision-text-area" readonly placeholder="日程を決定するとここに送信用の文章が生成されます"></textarea>
                         <button type="button" id="btn-copy-decision" class="btn btn-primary" style="width: 100%;">
                             <i data-lucide="copy"></i>
@@ -295,8 +321,8 @@
 
         <!-- フッター -->
         <footer class="app-footer">
-            <p>&copy; 2026 コマ合わせ v5.0 | 大学生のための予定調整ツール</p>
-            <p class="footer-sub">サーバー不要・個人情報送信なしの安心・高速設計。LINEでの調整をスマートに。</p>
+            <p>&copy; 2026 コマ合わせ v6.0 | 大学生のためのプレゼン特化型調整ツール</p>
+            <p class="footer-sub">CHIBATECH PROTOTYPE FINAL PRESENTATION EXHIBIT</p>
         </footer>
     </div>
 

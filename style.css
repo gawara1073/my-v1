@@ -997,6 +997,171 @@ body {
     animation: slideDown 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
+/* ==========================================================================
+   v6 プレゼン特化型スタイル (クイックガイド、デモボタン、注目アクション強調)
+   ========================================================================== */
+
+/* クイックガイドバナー */
+.quick-guide-banner {
+    background: linear-gradient(135deg, rgba(79, 70, 229, 0.1), rgba(16, 185, 129, 0.1));
+    border: 1px solid var(--primary-glow);
+    border-radius: var(--radius-md);
+    padding: 1.25rem;
+    margin-bottom: 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.quick-guide-banner::before {
+    content: "Quick Guide";
+    position: absolute;
+    top: -5px;
+    right: 15px;
+    font-size: 2rem;
+    font-weight: 900;
+    opacity: 0.05;
+    font-family: var(--font-outfit);
+    pointer-events: none;
+}
+
+.guide-steps-inline {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+}
+
+.guide-step-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 0.4rem;
+}
+
+.guide-step-icon-sm {
+    width: 32px;
+    height: 32px;
+    background: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    box-shadow: var(--shadow-sm);
+}
+
+.guide-step-text {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--text-main);
+    line-height: 1.2;
+}
+
+@media (max-width: 600px) {
+    .guide-steps-inline {
+        grid-template-columns: 1fr;
+        gap: 0.5rem;
+    }
+    .guide-step-item {
+        flex-direction: row;
+        text-align: left;
+    }
+}
+
+/* デモ用ボタン */
+.btn-demo-container {
+    margin-top: 1rem;
+    text-align: center;
+}
+
+.btn-demo {
+    background: white;
+    border: 2px dashed var(--primary-color);
+    color: var(--primary-color);
+    padding: 0.5rem 1rem;
+    border-radius: var(--radius-full);
+    font-size: 0.8rem;
+    font-weight: 800;
+    cursor: pointer;
+    transition: var(--transition-fast);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.btn-demo:hover {
+    background: var(--primary-light);
+    transform: scale(1.05);
+}
+
+.btn-demo i {
+    width: 14px;
+    height: 14px;
+}
+
+/* 注目アクションの強調 (Pulse Animation) */
+@keyframes pulse-indigo {
+    0% { box-shadow: 0 0 0 0 rgba(79, 70, 229, 0.4); }
+    70% { box-shadow: 0 0 0 10px rgba(79, 70, 229, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(79, 70, 229, 0); }
+}
+
+.recommendations-box.featured {
+    border: 2px solid var(--secondary-color);
+    background: linear-gradient(to bottom right, var(--secondary-light), transparent);
+    animation: fadeIn 0.8s ease-out;
+}
+
+.decision-box.featured {
+    border: 2px solid var(--primary-color);
+    background: linear-gradient(to bottom right, var(--primary-light), transparent);
+    box-shadow: var(--shadow-lg);
+    animation: pulse-indigo 2s infinite;
+}
+
+/* 結果グリッドの視認性向上 */
+.cell-result-container {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+}
+
+.result-ratio-label {
+    font-weight: 900;
+}
+
+/* ボタンのリッチ化 */
+.btn-primary.btn-large {
+    padding: 1.25rem;
+    font-size: 1.1rem;
+    letter-spacing: 0.05em;
+    background: linear-gradient(135deg, var(--primary-color) 0%, #312e81 100%);
+    box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.4);
+}
+
+/* モバイル向け最終調整 */
+@media (max-width: 480px) {
+    .app-header {
+        padding: 1rem 0;
+    }
+    .logo-text {
+        font-size: 1.8rem;
+    }
+    .card-body {
+        padding: 1rem;
+    }
+    .btn {
+        width: 100%;
+    }
+}
+
 .slot-detail-panel {
     background-color: var(--bg-card);
     backdrop-filter: var(--glass-blur);

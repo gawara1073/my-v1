@@ -161,6 +161,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnThemeToggle = document.getElementById('btn-theme-toggle');
     const themeToggleIcon = document.getElementById('theme-toggle-icon');
     const btnOpenGuide = document.getElementById('btn-open-guide');
+    const btnAddDemo = document.getElementById('btn-add-demo'); // v6
     const guideModal = document.getElementById('guide-modal');
     const guideContent = document.getElementById('guide-content');
     const btnCloseGuide = document.getElementById('btn-close-guide');
@@ -610,6 +611,68 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
         });
+
+        // v6追加: デモメンバーの追加
+        if (btnAddDemo) {
+            btnAddDemo.addEventListener('click', addDemoMembers);
+        }
+    }
+
+    // ---------------------------------------------------------
+    // v6 デモメンバー追加ロジック
+    // ---------------------------------------------------------
+    function addDemoMembers() {
+        if (state.members.length > 0) {
+            if (!confirm('現在のメンバーをリセットして、デモ用のサンプルデータを読み込みますか？')) {
+                return;
+            }
+            state.members = [];
+        }
+
+        // 候補日がなければ今日から3日間を選択
+        if (state.selectedDates.length === 0) {
+            const today = new Date();
+            for (let i = 0; i < 3; i++) {
+                const d = new Date(today);
+                d.setDate(today.getDate() + i);
+                state.selectedDates.push(formatDate(d.getFullYear(), d.getMonth(), d.getDate()));
+            }
+            state.selectedDates.sort();
+            renderCalendar();
+            renderTimetables();
+        }
+
+        const dates = state.selectedDates;
+        const demoData = [
+            { name: 'たろう 🎓', slots: [0, 1, 2, 5], color: 0 },
+            { name: 'はなこ ✨', slots: [1, 2, 3, 5], color: 1 },
+            { name: 'じろう 🎸', slots: [0, 2, 4, 5], color: 2 }
+        ];
+
+        demoData.forEach(demo => {
+            const schedule = [];
+            dates.forEach((dateStr) => {
+                const dateKey = dateStr.replace(/-/g, '');
+                demo.slots.forEach(pIdx => {
+                    if (state.periods[pIdx]) {
+                        schedule.push(`${dateKey}-${state.periods[pIdx].num}`);
+                    }
+                });
+            });
+
+            state.members.push({
+                id: Date.now() + Math.random(),
+                name: demo.name,
+                schedule: schedule,
+                colorIndex: demo.color
+            });
+        });
+
+        updateResults();
+        showToast('✨ デモ用メンバー3名を追加しました！ヒートマップを見てみよう！', 4000);
+        
+        // 結果セクションへスクロール
+        document.getElementById('sec-results').scrollIntoView({ behavior: 'smooth' });
     }
 
     // ---------------------------------------------------------
@@ -836,9 +899,9 @@ document.addEventListener('DOMContentLoaded', () => {
             // 編集状態のクリア
             state.editingMemberId = null;
             editIndicator.classList.add('hidden');
-            btnAddMember.querySelector('span').innerText = 'メンバーに追加する';
+            btnAddMember.querySelector('span').innerText = '予定を確定して保存';
             if (typeof lucide !== 'undefined') {
-                btnAddMember.querySelector('i').setAttribute('data-lucide', 'user-plus');
+                btnAddMember.querySelector('i').setAttribute('data-lucide', 'check-circle');
                 lucide.createIcons();
             }
         } else {
@@ -874,7 +937,7 @@ document.addEventListener('DOMContentLoaded', () => {
             };
 
             state.members.push(newMember);
-            showToast(`👤 ${newMember.name} さんの空き時間を追加しました！`, 3000);
+            showToast(`👤 ${newMember.name} さんの予定を一時保存しました！`, 3000);
         }
 
         // 成功時の紙吹雪エフェクト
@@ -885,9 +948,14 @@ document.addEventListener('DOMContentLoaded', () => {
         inputName.value = '';
         state.currentName = '';
         
-        // グリッドと結果の更新
+        // 描画更新
         renderTimetables();
         updateResults();
+
+        showToast('✅ 全員の空き状況を更新しました！下に結果が表示されます。', 3000);
+        
+        // 少しスクロールして教える
+        memberCountEl.parentElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
 
     function editMember(memberId) {
@@ -939,9 +1007,9 @@ document.addEventListener('DOMContentLoaded', () => {
         inputName.value = '';
         state.currentName = '';
         
-        btnAddMember.querySelector('span').innerText = 'メンバーに追加する';
+        btnAddMember.querySelector('span').innerText = '予定を確定して保存';
         if (typeof lucide !== 'undefined') {
-            btnAddMember.querySelector('i').setAttribute('data-lucide', 'user-plus');
+            btnAddMember.querySelector('i').setAttribute('data-lucide', 'check-circle');
             lucide.createIcons();
         }
         
@@ -1618,7 +1686,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // LINEへ直接送信する処理
     function handleLineDirectShare() {
         if (state.members.length === 0 && state.currentSchedule.size === 0) {
-            showToast('まずは名前と空き時間を入力して、メンバーに追加するか、入力を行ってください！', 4000);
+            showToast('まずは名前と空き時間を入力して、予定を確定させるか、URLを送ってね！', 4000);
             return;
         }
 
